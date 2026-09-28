@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全天候 7 日旅遊 · 互動執行李清單</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Completion Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .checkbox-anim {
+            transition: all 0.2s ease-in-out;
+        }
+        .checkbox-anim:checked {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-16">
+
+    <!-- Top Header Banner -->
+    <header class="bg-gradient-to-r from-sky-600 via-indigo-600 to-slate-800 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 text-center sm:text-left">
+                <div class="bg-white/20 p-2.5 rounded-2xl backdrop-blur-sm text-2xl">
+                    ✈️
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wide" id="appHeaderTitle">全天候 7日旅遊 · 執行李清單</h1>
+                    <p class="text-sky-100 text-xs mt-0.5" id="appHeaderSub">專為 Switch 玩家、充電器材、手信 & 四季不同氣候設計</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleLanguage()" id="langToggleBtn" class="px-3 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-language"></i> EN
+                </button>
+                <button onclick="toggleManageDefaultsModal(true)" class="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 backdrop-blur-sm" title="管理預設範本">
+                    <i class="fa-solid fa-sliders"></i> <span data-i18n="manageDefaults">預設範本</span>
+                </button>
+                <button onclick="exportPackingList()" class="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 backdrop-blur-sm">
+                    <i class="fa-solid fa-share-nodes"></i> <span data-i18n="export">複製清單</span>
+                </button>
+                <button onclick="toggleResetModal(true)" class="px-3 py-2 bg-rose-700/40 hover:bg-rose-700/60 text-rose-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-white/20">
+                    <i class="fa-solid fa-rotate-right"></i> <span data-i18n="reset">重設</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 mt-6 space-y-8">
+
+        <!-- Progress Summary Card -->
+        <section class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-200/80">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                <div>
+                    <span class="text-xs font-bold tracking-wider text-sky-600 bg-sky-50 px-2.5 py-1 rounded-full uppercase">Packing Status</span>
+                    <h2 class="text-xl font-bold text-slate-800 mt-1" data-i18n="progressTitle">行李準備進度</h2>
+                </div>
+                <div class="text-right">
+                    <span id="progressPercent" class="text-3xl font-black text-indigo-600">0%</span>
+                    <span id="progressCount" class="text-xs text-slate-400 block font-medium">0 / 0 已執好</span>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden p-0.5 border border-slate-200">
+                <div id="progressBar" class="bg-gradient-to-r from-sky-500 to-indigo-600 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </section>
+
+        <!-- Destination Weather Inquiry Box -->
+        <section class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 md:p-6 text-white shadow-xl relative overflow-hidden mb-8">
+            <div class="absolute -right-6 -bottom-6 text-white/5 text-9xl font-black select-none pointer-events-none">
+                <i class="fa-solid fa-cloud-sun-rain"></i>
+            </div>
+            
+            <div class="relative z-10 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 border-b border-white/10 pb-3">
+                    <div>
+                        <div class="flex items-center space-x-2 text-sky-300 font-bold text-xs uppercase tracking-widest">
+                            <i class="fa-solid fa-globe text-amber-300"></i>
+                            <span data-i18n="weatherSubHeader">實時天氣查詢 & 未來 7 日預測</span>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold flex items-center gap-2 mt-0.5" data-i18n="weatherHeader">
+                            🌍 目的地 7 日氣候狀況
+                        </h3>
+                    </div>
+                    <div class="text-[11px] text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
+                        <i class="fa-solid fa-circle-info text-sky-400 mr-1"></i>
+                        <span data-i18n="sourceLabel">資料來源：</span><span id="weatherSourceText" class="text-slate-300 font-medium">Open-Meteo API</span>
+                    </div>
+                </div>
+
+                <!-- Weather Query Input & Quick Select Buttons -->
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="flex-1 flex gap-2">
+                        <input type="text" id="weatherCityInput" placeholder="輸入城市 (例如：東京, 首爾, 曼谷, 倫敦, 台北)" class="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 text-sm">
+                        <button onclick="triggerCitySearch()" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 font-bold text-xs rounded-xl shadow transition whitespace-nowrap flex items-center gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="searchBtn">查詢天氣</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-1.5 overflow-x-auto text-xs py-1 custom-scrollbar">
+                        <span class="text-slate-400 text-[11px] whitespace-nowrap" data-i18n="popularLabel">熱門：</span>
+                        <button onclick="quickSelectCity('Tokyo')" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg whitespace-nowrap border border-white/10 text-slate-200" data-i18n="cityTokyo">東京</button>
+                        <button onclick="quickSelectCity('Seoul')" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg whitespace-nowrap border border-white/10 text-slate-200" data-i18n="citySeoul">首爾</button>
+                        <button onclick="quickSelectCity('Bangkok')" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg whitespace-nowrap border border-white/10 text-slate-200" data-i18n="cityBangkok">曼谷</button>
+                        <button onclick="quickSelectCity('Taipei')" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg whitespace-nowrap border border-white/10 text-slate-200" data-i18n="cityTaipei">台北</button>
+                        <button onclick="quickSelectCity('London')" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-lg whitespace-nowrap border border-white/10 text-slate-200" data-i18n="cityLondon">倫敦</button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Weather Result Box -->
+                <div id="weatherResultCard" class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 text-xs space-y-3">
+                    <div class="text-center py-4 text-slate-300">
+                        <i class="fa-solid fa-cloud-sun text-3xl text-sky-400 block mb-2"></i>
+                        <span>請於上方輸入城市名稱或點選熱門城市，以獲取當地實時天氣預報與建議。</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seasonal Clothing Preset Switcher -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+            <!-- Trip Duration Selector -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-check text-indigo-600"></i>
+                        <span data-i18n="durationTitle">行程天數 (自動計算建議衣物與藥物數量)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400" data-i18n="durationDesc">切換天數後，系統會按天數動態調整衣物、內衣褲及藥物份量：</p>
+                </div>
+                <!-- Duration Buttons Container -->
+                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="changeTripDays(3)" id="day-btn-3" class="day-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">3日</button>
+                        <button onclick="changeTripDays(5)" id="day-btn-5" class="day-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">5日</button>
+                        <button onclick="changeTripDays(7)" id="day-btn-7" class="day-btn px-3 py-1.5 rounded-xl border border-indigo-600 bg-indigo-600 text-white transition whitespace-nowrap">7日</button>
+                        <button onclick="changeTripDays(10)" id="day-btn-10" class="day-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">10日</button>
+                        <button onclick="changeTripDays(14)" id="day-btn-14" class="day-btn px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition whitespace-nowrap">14日</button>
+                    </div>
+                    <!-- Custom Days Stepper Box -->
+                    <div class="flex items-center bg-slate-100 rounded-xl px-2.5 py-1 border border-slate-200 shadow-inner shrink-0">
+                        <button onclick="adjustDays(-1)" class="text-slate-600 font-black px-2 hover:text-indigo-600 text-sm transition">-</button>
+                        <span id="customDaysText" class="px-1 text-indigo-700 font-extrabold flex items-baseline">
+                            <span class="text-base font-black">7</span><span class="text-[10px] ml-0.5">日</span>
+                        </span>
+                        <button onclick="adjustDays(1)" class="text-slate-600 font-black px-2 hover:text-indigo-600 text-sm transition">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i>
+                        <span data-i18n="presetTitle">行李模式切換 (按氣候自動替換建議衣物)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400" data-i18n="presetDesc">根據你前往的地區氣候，一鍵調整衣物與護理配備：</p>
+                </div>
+                <div class="flex flex-wrap gap-1.5 text-xs">
+                    <button onclick="switchClimatePreset('all')" id="preset-all" class="preset-btn px-3 py-1.5 rounded-xl font-bold transition border border-sky-500 bg-sky-500 text-white" data-i18n="presetAll">
+                        🌐 全天候通用
+                    </button>
+                    <button onclick="switchClimatePreset('hot')" id="preset-hot" class="preset-btn px-3 py-1.5 rounded-xl font-bold transition border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100" data-i18n="presetHot">
+                        ☀️ 炎熱夏日
+                    </button>
+                    <button onclick="switchClimatePreset('cold')" id="preset-cold" class="preset-btn px-3 py-1.5 rounded-xl font-bold transition border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100" data-i18n="presetCold">
+                        ❄️ 寒冷雪國
+                    </button>
+                    <button onclick="switchClimatePreset('mild')" id="preset-mild" class="preset-btn px-3 py-1.5 rounded-xl font-bold transition border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100" data-i18n="presetMild">
+                        🍁 涼爽春秋
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filter Tabs & Add Item Control Bar -->
+        <div class="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center pt-2">
+            <!-- Category Filter Tabs -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar text-xs">
+                <button onclick="setCategoryFilter('all')" id="tab-all" class="category-tab px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap bg-indigo-600 text-white shadow-sm">
+                    <span data-i18n="tabAll">全部</span> <span id="count-all" class="ml-1 opacity-80">(0)</span>
+                </button>
+                <button onclick="setCategoryFilter('electronics')" id="tab-electronics" class="category-tab px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-i18n="tabElectronics">
+                    ⚡ 電子火牛
+                </button>
+                <button onclick="setCategoryFilter('clothes')" id="tab-clothes" class="category-tab px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-i18n="tabClothes">
+                    👕 服飾
+                </button>
+                <button onclick="setCategoryFilter('toiletries')" id="tab-toiletries" class="category-tab px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-i18n="tabToiletries">
+                    🧴 個人護理
+                </button>
+                <button onclick="setCategoryFilter('docs')" id="tab-docs" class="category-tab px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-i18n="tabDocs">
+                    📄 重要證件
+                </button>
+                <button onclick="setCategoryFilter('meds')" id="tab-meds" class="category-tab px-3.5 py-2 rounded-xl font-bold transition whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-i18n="tabMeds">
+                    💊 隨身藥物
+                </button>
+            </div>
+
+            <!-- Add Custom Item Button -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleAddItemModal(true)" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="addItemBtn">新增自訂項目</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Packing List Categories Container -->
+        <div id="packingListsContainer" class="space-y-4">
+            <!-- Dynamic Category Cards will render here -->
+        </div>
+
+    </main>
+
+    <!-- Add Custom Item Modal -->
+    <div id="addItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span class="p-2 bg-emerald-100 text-emerald-600 rounded-xl text-sm"><i class="fa-solid fa-plus"></i></span>
+                    <span data-i18n="modalTitle">加入自訂行李項目</span>
+                </h3>
+                <button onclick="toggleAddItemModal(false)" class="text-slate-400 hover:text-slate-600 text-lg p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="addItemForm" onsubmit="handleAddNewItem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1" data-i18n="itemNameLabel">物品名稱 *</label>
+                    <input type="text" id="newItemName" required placeholder="例如：暖貼、GoPro、相機腳架" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1" data-i18n="itemCatLabel">所屬分類</label>
+                        <select id="newItemCategory" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white">
+                            <option value="electronics" data-i18n="optElectronics">⚡ 電子/充電器</option>
+                            <option value="clothes" data-i18n="optClothes">👕 衣物服飾</option>
+                            <option value="toiletries" data-i18n="optToiletries">🧴 個人護理</option>
+                            <option value="docs" data-i18n="optDocs">📄 證件/財務</option>
+                            <option value="meds" data-i18n="optMeds">💊 隨身藥物</option>
+                            <option value="misc" data-i18n="optMisc">🎒 雜項/手信/裝備</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1" data-i18n="itemQtyLabel">數量 / 備註</label>
+                        <input type="text" id="newItemQty" placeholder="例如：1部, 7條, 10包" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="toggleAddItemModal(false)" class="w-1/2 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition" data-i18n="cancelBtn">
+                        取消
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition shadow-sm" data-i18n="confirmBtn">
+                        確認加入
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Custom Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-800" data-i18n="confirmResetHeader">重置執行李清單</h3>
+                <p class="text-xs text-slate-500 mt-1" data-i18n="confirmResetMsg">確定要重設所有項目？將會還原至你設定的預設範本項目，並清除已勾選狀態。</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="toggleResetModal(false)" class="w-1/2 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition" data-i18n="cancelBtn">取消</button>
+                <button onclick="executeReset()" class="w-1/2 py-2.5 bg-rose-600 text-white rounded-xl font-bold text-xs hover:bg-rose-700 transition shadow-sm" data-i18n="reset">重設</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Default Preset Items Modal -->
+    <div id="manageDefaultsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <span class="p-2 bg-indigo-100 text-indigo-600 rounded-xl text-sm"><i class="fa-solid fa-sliders"></i></span>
+                    <span data-i18n="manageDefaultsTitle">自訂預設行李品項</span>
+                </h3>
+                <button onclick="toggleManageDefaultsModal(false)" class="text-slate-400 hover:text-slate-600 text-lg p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4" data-i18n="manageDefaultsDesc">勾選你平時旅行預設需要的項目。未勾選的項目將不會出現在清單中：</p>
+
+            <div id="defaultItemsListContainer" class="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-1 mb-4">
+                <!-- Dynamically filled with categorized checkbox options -->
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex flex-wrap sm:flex-nowrap gap-2">
+                <button onclick="restoreFactoryDefaults()" class="w-full sm:w-auto px-3.5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl font-bold text-xs transition" data-i18n="restoreFactory">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> 還原原廠預設
+                </button>
+                <button onclick="saveCurrentListAsDefaults()" class="w-full sm:w-auto px-3.5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-xl font-bold text-xs transition shadow-sm" data-i18n="saveAsDefault">
+                    <i class="fa-solid fa-bookmark mr-1"></i> 儲存目前清單為預設
+                </button>
+                <button onclick="toggleManageDefaultsModal(false)" class="w-full sm:w-1/3 ml-auto px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition shadow-sm" data-i18n="confirmBtn">
+                    確認儲存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Message -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2 border border-slate-700 opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastText">已成功更新！</span>
+    </div>
+
+    <script>
+        // Language i18n Dictionary
+        const I18N = {
+            zh: {
+                appTitlePrefix: "全天候 ",
+                appTitleSuffix: "日旅遊 · 執行李清單",
+                appSubtitle: "專為 Switch 玩家、充電器材、手信 & 四季不同氣候設計",
+                durationTitle: "行程天數 (自動計算建議衣物與藥物數量)",
+                durationDesc: "切換天數後，系統會按天數動態調整衣物、內衣褲及藥物份量：",
+                export: "複製清單",
+                reset: "一鍵返回預設",
+                manageDefaults: "預設範本",
+                manageDefaultsTitle: "自訂預設行李品項",
+                manageDefaultsDesc: "勾選你平時旅行預設需要的項目。未勾選的項目將不會出現在清單中：",
+                restoreFactory: "還原原廠預設",
+                saveAsDefault: "將目前清單設為預設範本",
+                progressTitle: "行李準備進度",
+                packedSuffix: "已執好",
+                weatherSubHeader: "實時天氣查詢 & 未來氣候預測",
+                weatherHeader: "🌍 目的地氣候狀況與每日預報",
+                sourceLabel: "資料來源：",
+                searchPlaceholder: "輸入城市 (例如：東京, 首爾, 曼谷, 倫敦, 台北)",
+                searchBtn: "查詢天氣",
+                popularLabel: "熱門：",
+                cityTokyo: "東京",
+                citySeoul: "首爾",
+                cityBangkok: "曼谷",
+                cityTaipei: "台北",
+                cityLondon: "倫敦",
+                presetTitle: "行李模式切換 (按氣候自動替換建議衣物)",
+                presetDesc: "根據你前往的地區氣候，一鍵調整衣物與護理配備：",
+                presetAll: "🌐 全天候通用",
+                presetHot: "☀️ 炎熱夏日",
+                presetCold: "❄️ 寒冷雪國",
+                presetMild: "🍁 涼爽春秋",
+                tabAll: "全部",
+                tabElectronics: "⚡ 電子火牛",
+                tabClothes: "👕 衣物服飾",
+                tabToiletries: "🧴 個人護理",
+                tabDocs: "📄 重要證件",
+                tabMeds: "💊 隨身藥物",
+                addItemBtn: "新增自訂項目",
+                modalTitle: "加入自訂行李項目",
+                itemNameLabel: "物品名稱 *",
+                itemCatLabel: "所屬分類",
+                itemQtyLabel: "數量 / 備註",
+                cancelBtn: "取消",
+                confirmBtn: "確認",
+                optElectronics: "⚡ 電子/充電器",
+                optClothes: "👕 衣物服飾",
+                optToiletries: "🧴 個人護理",
+                optDocs: "📄 證件/財務",
+                optMeds: "💊 隨身藥物",
+                optMisc: "🎒 雜項/手信/裝備",
+                itemPlaceholderName: "例如：暖貼、GoPro、相機腳架",
+                itemPlaceholderQty: "例如：1部, 7條, 10包",
+                emptyCat: "此分類暫無項目",
+                completed: "✓ 已完畢",
+                applyPreset: "👉 套用建議衣物模組",
+                umbrellaNeed: "建議隨身帶摺傘 (雨患機率高)",
+                umbrellaNotNeed: "降雨率低",
+                jacketNeed: "建議帶外套 (氣溫較涼)",
+                jacketNotNeed: "無需厚外套",
+                confirmResetHeader: "重置執行李清單",
+                confirmResetMsg: "確定要重設所有項目？將會還原至你設定的預設範本項目，並清除已勾選狀態。",
+                celebration: "🎉 恭喜！你已經執齊所有旅行行李！出發順利！",
+                listCopied: "📋 已成功複製清單內容到剪貼簿！",
+                customNote: "自訂項目",
+                itemDeletedToast: "已成功刪除項目！",
+                savedDefaultToast: "已將目前清單儲存為預設範本！",
+                restoredFactoryToast: "已恢復原廠預設品項！"
+            },
+            en: {
+                appTitlePrefix: "All-Weather ",
+                appTitleSuffix: "-Day Travel Packing List",
+                appSubtitle: "Tailored for Switch Gamers, Chargers, Gifts & All 4 Seasons",
+                durationTitle: "Trip Duration (Auto-scales clothes & meds quantities)",
+                durationDesc: "Changing trip length automatically adjusts clothes, underwear, and medication count:",
+                export: "Copy List",
+                reset: "Reset Defaults",
+                manageDefaults: "Defaults",
+                manageDefaultsTitle: "Customize Default Items",
+                manageDefaultsDesc: "Check the items you want in your baseline default list. Unchecked items won't appear:",
+                restoreFactory: "Restore Factory Defaults",
+                saveAsDefault: "Save Current as Default",
+                progressTitle: "Packing Progress",
+                packedSuffix: "packed",
+                weatherSubHeader: "Real-Time Weather Query & Forecast",
+                weatherHeader: "🌍 Destination Climate & Daily Forecast",
+                sourceLabel: "Source: ",
+                searchPlaceholder: "Enter city (e.g. Tokyo, Seoul, Bangkok, London, Taipei)",
+                searchBtn: "Search Weather",
+                popularLabel: "Popular:",
+                cityTokyo: "Tokyo",
+                citySeoul: "Seoul",
+                cityBangkok: "Bangkok",
+                cityTaipei: "Taipei",
+                cityLondon: "London",
+                presetTitle: "Climate Preset Switcher (Auto-adjusts clothing)",
+                presetDesc: "Adjust clothes & toiletries instantly based on local climate:",
+                presetAll: "🌐 All-Weather",
+                presetHot: "☀️ Hot Summer",
+                presetCold: "❄️ Cold / Snow",
+                presetMild: "🍁 Mild Autumn/Spring",
+                tabAll: "All",
+                tabElectronics: "⚡ Tech & Chargers",
+                tabClothes: "👕 Clothing",
+                tabToiletries: "🧴 Toiletries",
+                tabDocs: "📄 Documents",
+                tabMeds: "💊 Medicine",
+                addItemBtn: "Add Custom Item",
+                modalTitle: "Add Custom Packing Item",
+                itemNameLabel: "Item Name *",
+                itemCatLabel: "Category",
+                itemQtyLabel: "Qty / Notes",
+                cancelBtn: "Cancel",
+                confirmBtn: "Confirm",
+                optElectronics: "⚡ Tech / Chargers",
+                optClothes: "👕 Clothing",
+                optToiletries: "🧴 Toiletries",
+                optDocs: "📄 Docs / Finance",
+                optMeds: "💊 Medicine",
+                optMisc: "🎒 Misc / Gifts",
+                itemPlaceholderName: "e.g., Hand warmers, GoPro, Tripod",
+                itemPlaceholderQty: "e.g., 1 pc, 7 pairs, 10 packs",
+                emptyCat: "No items in this category",
+                completed: "✓ Done",
+                applyPreset: "👉 Apply Recommended Clothing Preset",
+                umbrellaNeed: "Bring umbrella (High rain probability)",
+                umbrellaNotNeed: "Low rain chance",
+                jacketNeed: "Bring jacket (Cooler temp)",
+                jacketNotNeed: "No jacket needed",
+                confirmResetHeader: "Reset Packing List",
+                confirmResetMsg: "Reset all items? It will restore your chosen default template and clear checkboxes.",
+                celebration: "🎉 Congratulations! All items are packed! Safe travels!",
+                listCopied: "📋 Packing list copied to clipboard!",
+                customNote: "Custom Item",
+                itemDeletedToast: "Item deleted successfully!",
+                savedDefaultToast: "Current list saved as your default template!",
+                restoredFactoryToast: "Restored factory default items!"
+            }
+        };
+
+        const CATEGORIES = {
+            electronics: { title: '⚡ 電子產品 & 充電火牛', titleEn: '⚡ Tech & Chargers', icon: 'fa-bolt' },
+            clothes: { title: '👕 衣物服飾裝備', titleEn: '👕 Clothing & Wear', icon: 'fa-shirt' },
+            toiletries: { title: '🧴 個人護理 & 防護', titleEn: '🧴 Toiletries & Care', icon: 'fa-pump-soap' },
+            docs: { title: '📄 重要證件 & 財務', titleEn: '📄 Documents & Finance', icon: 'fa-id-card' },
+            meds: { title: '💊 隨身常備藥物', titleEn: '💊 Essential Medicine', icon: 'fa-pills' },
+            misc: { title: '🎒 雜項、手信與裝備', titleEn: '🎒 Misc & Souvenirs', icon: 'fa-bag-shopping' }
+        };
+
+        const CITY_PRESETS = {
+            Tokyo: { zh: '東京', en: 'Tokyo', lat: 35.6762, lon: 139.6503 },
+            Seoul: { zh: '首爾', en: 'Seoul', lat: 37.5665, lon: 126.9780 },
+            Bangkok: { zh: '曼谷', en: 'Bangkok', lat: 13.7563, lon: 100.5018 },
+            Taipei: { zh: '台北', en: 'Taipei', lat: 25.0330, lon: 121.5654 },
+            London: { zh: '倫敦', en: 'London', lat: 51.5074, lon: -0.1278 }
+        };
+
+        let items = [];
+        let disabledItemIds = new Set();
+        let currentFilter = 'all';
+        let currentClimatePreset = 'all';
+        let currentLang = 'zh';
+        let tripDays = 7;
+        let confettiFired = false;
+        let lastCitySearched = '';
+        let currentWeatherData = null;
+        let currentWeatherStartIndex = 7;
+        let weatherFetchTime = null;
+
+        window.onload = function() {
+            const savedLang = localStorage.getItem('packing_list_lang');
+            if (savedLang) currentLang = savedLang;
+
+            const savedDays = localStorage.getItem('packing_trip_days');
+            if (savedDays) tripDays = parseInt(savedDays) || 7;
+
+            const savedDisabled = localStorage.getItem('packing_disabled_ids');
+            if (savedDisabled) {
+                try {
+                    disabledItemIds = new Set(JSON.parse(savedDisabled));
+                } catch(e) {
+                    disabledItemIds = new Set();
+                }
+            }
+            
+            loadItemsFromStorage();
+            updateLanguageUI();
+            updateDurationUI();
+            renderApp();
+            renderWeatherPrompt();
+        };
+
+        function saveDisabledIds() {
+            localStorage.setItem('packing_disabled_ids', JSON.stringify(Array.from(disabledItemIds)));
+        }
+
+        function saveItemsToStorage() {
+            localStorage.setItem('all_weather_packing_items_v4', JSON.stringify(items));
+        }
+
+        function loadItemsFromStorage() {
+            const saved = localStorage.getItem('all_weather_packing_items_v4');
+            if (saved) {
+                try {
+                    items = JSON.parse(saved);
+                } catch(e) {
+                    items = buildFullItemList('all', tripDays);
+                }
+            } else {
+                items = buildFullItemList('all', tripDays);
+            }
+        }
+
+        function buildFullItemList(preset, days) {
+            const extraSpareClothes = days > 5 ? 2 : 1;
+            const pantsQty = Math.max(2, Math.ceil(days / 2));
+            const socksQty = days + extraSpareClothes;
+            const tShirtQty = days + extraSpareClothes;
+
+            const coreItems = [
+                { id: 'sw1', name: 'Nintendo Switch 主機 + Joy-Con', nameEn: 'Nintendo Switch Console + Joy-Cons', category: 'electronics', qty: '1部', qtyEn: '1 unit', isPacked: false, note: '記得充飽電搭飛機玩', noteEn: 'Fully charge for the flight', climate: 'all' },
+                { id: 'sw2', name: 'Switch 專用保護袋 / 硬盒', nameEn: 'Switch Carrying / Hard Case', category: 'electronics', qty: '1個', qtyEn: '1 pc', isPacked: false, note: '防壓防撞', noteEn: 'Protect from shocks', climate: 'all' },
+                { id: 'sw3', name: 'Switch 實體遊戲卡盒 / 記憶卡', nameEn: 'Switch Game Cards / MicroSD Card', category: 'electronics', qty: '數張', qtyEn: 'A few', isPacked: false, note: '多款遊戲隨身帶', noteEn: 'Games on the go', climate: 'all' },
+                { id: 'sw4', name: 'Switch 原廠/便攜底座 + HDMI線', nameEn: 'Switch Portable Dock + HDMI Cable', category: 'electronics', qty: '1套', qtyEn: '1 set', isPacked: false, note: '如需要在酒店電視打機', noteEn: 'For playing on hotel TV', climate: 'all' },
+                { id: 'el_apm', name: 'AirPods Max 頭戴式耳機', nameEn: 'AirPods Max Headphones', category: 'electronics', qty: '1副', qtyEn: '1 pair', isPacked: false, note: '飛機主動降噪、聽歌必備', noteEn: 'ANC for flight & music', climate: 'all' },
+                { id: 'ch1', name: '萬能旅行轉接插頭 (Travel Adapter)', nameEn: 'Universal Travel Adapter', category: 'electronics', qty: '1-2個', qtyEn: '1-2 pcs', isPacked: false, note: '適應目的地國家的插座腳位', noteEn: 'Fits destination outlets', climate: 'all' },
+                { id: 'ch2', name: 'GaN 多口快充火牛 (65W/100W)', nameEn: 'GaN Multi-port Fast Charger (65W+)', category: 'electronics', qty: '1-2個', qtyEn: '1-2 pcs', isPacked: false, note: '可同時充 Switch、手機、尿袋', noteEn: 'Charge Switch, phone, power bank', climate: 'all' },
+                { id: 'ch3', name: 'Type-C 急速充電線 (Switch/Android用)', nameEn: 'USB-C Fast Charging Cable', category: 'electronics', qty: '2-3條', qtyEn: '2-3 pcs', isPacked: false, note: '建議長度 1.5M - 2M', noteEn: 'Recommended 1.5M - 2M', climate: 'all' },
+                { id: 'ch4', name: 'iPhone / iPad 充電線', nameEn: 'iPhone / iPad Cables', category: 'electronics', qty: '2條', qtyEn: '2 pcs', isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'ch5', name: '大容量外置尿袋 (Power Bank)', nameEn: 'High Capacity Power Bank', category: 'electronics', qty: '1-2個', qtyEn: '1-2 pcs', isPacked: false, note: '必須手提隨身登機！', noteEn: 'Must keep in carry-on!', climate: 'all' },
+                { id: 'ch6', name: '智能手錶/Apple Watch 專用充電線', nameEn: 'Smartwatch / Apple Watch Cable', category: 'electronics', qty: '1條', qtyEn: '1 pc', isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'doc1', name: '護照 (Passport) - 有效期6個月以上', nameEn: 'Passport (Valid 6+ months)', category: 'docs', qty: '1本', qtyEn: '1 pc', isPacked: false, note: '正本及影印本/手機留底', noteEn: 'Original & digital backup', climate: 'all' },
+                { id: 'doc2', name: '身份證 / 駕駛執照', nameEn: 'ID Card / Driver License', category: 'docs', qty: '1張', qtyEn: '1 pc', isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'doc3', name: '機票 Confirmation / 酒店預訂單', nameEn: 'Flight Confirmation & Hotel Booking', category: 'docs', qty: '1份', qtyEn: '1 copy', isPacked: false, note: '可儲存於手機 PDF', noteEn: 'Save as PDF on phone', climate: 'all' },
+                { id: 'doc4', name: '旅遊保險單據', nameEn: 'Travel Insurance Document', category: 'docs', qty: '1份', qtyEn: '1 copy', isPacked: false, note: '上記錄保單編號與救援電話', noteEn: 'Note emergency contacts', climate: 'all' },
+                { id: 'doc5', name: '目的地貨幣現金 / 信用卡', nameEn: 'Foreign Currency Cash & Credit Cards', category: 'docs', qty: '適量', qtyEn: 'Sufficient', isPacked: false, note: '開通海外簽帳及提款', noteEn: 'Enable overseas payment/ATM', climate: 'all' },
+                { id: 'doc6', name: 'SIM 卡 / 海外 eSIM / Pocket WiFi', nameEn: 'Travel SIM / eSIM / Pocket WiFi', category: 'docs', qty: '1套', qtyEn: '1 set', isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'med1', name: '水土不服 / 止瀉藥 / 胃藥', nameEn: 'Stomach / Anti-diarrhea Medicine', category: 'meds', qty: `${days}日份量`, qtyEn: `${days}-day supply`, isPacked: false, note: '預防飲食不習慣', noteEn: 'For unfamiliar food', climate: 'all' },
+                { id: 'med2', name: '止痛退燒藥 (Paracetamol/Panadol)', nameEn: 'Painkillers / Fever Reliever', category: 'meds', qty: '1盒', qtyEn: '1 box', isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'med3', name: '暈車 / 暈船藥', nameEn: 'Motion Sickness Pills', category: 'meds', qty: '1盒', qtyEn: '1 box', isPacked: false, note: '長途車/船程必備', noteEn: 'For long travel legs', climate: 'all' },
+                { id: 'med4', name: '膠布 & 止痕膏', nameEn: 'Band-Aids & Anti-itch Ointment', category: 'meds', qty: '1包', qtyEn: '1 pack', isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'med5', name: '個人慢性病處方藥物', nameEn: 'Personal Prescription Meds', category: 'meds', qty: `${days}日份量`, qtyEn: `${days}-day supply`, isPacked: false, note: '', noteEn: '', climate: 'all' },
+                { id: 'mi_souvenir', name: '攞俾朋友嘅手信 / 禮物', nameEn: 'Gifts / Souvenirs for Friends', category: 'misc', qty: '適量', qtyEn: 'As needed', isPacked: false, note: '探朋友或送禮用，預留行李箱空間', noteEn: 'Reserve space in luggage', climate: 'all' },
+                { id: 'mi3', name: '摺傘 / 防曬雨遮', nameEn: 'Compact Umbrella (UV/Rain)', category: 'misc', qty: '1把', qtyEn: '1 pc', isPacked: false, note: '應付雨天或防曬遮陽', noteEn: 'For sun or sudden rain', climate: 'all' },
+                { id: 'mi4', name: '輕量可重複使用水樽', nameEn: 'Reusable Water Bottle', category: 'misc', qty: '1個', qtyEn: '1 pc', isPacked: false, note: '隨時補充水分', noteEn: 'Stay hydrated', climate: 'all' },
+                { id: 'mi5', name: '污衣收納袋 / 密實袋', nameEn: 'Laundry Bags / Ziploc Bags', category: 'misc', qty: `${Math.ceil(days / 2)}個`, qtyEn: `${Math.ceil(days / 2)} pcs`, isPacked: false, note: '分隔污衣物', noteEn: 'Separate dirty clothes', climate: 'all' }
+            ];
+
+            const seasonalItems = {
+                hot: [
+                    { id: 'cl_h1', name: '透氣短袖 T-shirt / 背心', nameEn: 'Breathable T-shirts / Tank tops', category: 'clothes', qty: `${tShirtQty}件`, qtyEn: `${tShirtQty} pcs`, isPacked: false, note: `每天 1 件 + ${extraSpareClothes} 件備用`, noteEn: `1 per day + ${extraSpareClothes} spare`, climate: 'hot' },
+                    { id: 'cl_h2', name: '清涼短褲 / 裙子', nameEn: 'Shorts / Skirts', category: 'clothes', qty: `${pantsQty}條`, qtyEn: `${pantsQty} pcs`, isPacked: false, note: '方便觀光與戶外活動', noteEn: 'For sightseeing & outdoor', climate: 'hot' },
+                    { id: 'cl_h3', name: '內衣褲 & 襪子', nameEn: 'Underwear & Socks', category: 'clothes', qty: `${socksQty}套`, qtyEn: `${socksQty} sets`, isPacked: false, note: '建議多帶備用', noteEn: 'Bring extra sets', climate: 'hot' },
+                    { id: 'cl_h4', name: '泳衣 / 泳褲 / 防曬水上衣 (RASHGUARD)', nameEn: 'Swimwear / Rashguard', category: 'clothes', qty: '2套', qtyEn: '2 sets', isPacked: false, note: '輪流替換曬乾', noteEn: 'Rotate to dry', climate: 'hot' },
+                    { id: 'cl_h5', name: '薄風衣 / 薄外套', nameEn: 'Light Jacket / Windbreaker', category: 'clothes', qty: '1-2件', qtyEn: '1-2 pcs', isPacked: false, note: '室內強冷氣/機上必備', noteEn: 'For strong AC & flights', climate: 'hot' },
+                    { id: 'cl_h6', name: '防滑拖鞋 / 涼鞋', nameEn: 'Flip-flops / Sandals', category: 'clothes', qty: '1雙', qtyEn: '1 pair', isPacked: false, note: '去沙灘/酒店穿著', noteEn: 'For beach & hotel', climate: 'hot' },
+                    { id: 'to_h1', name: '高倍數防曬霜 (SPF50+)', nameEn: 'Sunscreen (SPF50+)', category: 'toiletries', qty: '1-2支', qtyEn: '1-2 bottles', isPacked: false, note: '強烈陽光必備', noteEn: 'Essential for high UV', climate: 'hot' },
+                    { id: 'to_h2', name: '強效蚊怕水 / 蚊貼', nameEn: 'Bug Spray / Mosquito Patches', category: 'toiletries', qty: '1支', qtyEn: '1 pc', isPacked: false, note: '戶外防蚊蟲', noteEn: 'Outdoor repellent', climate: 'hot' },
+                    { id: 'to_h3', name: '太陽眼鏡 (UV400)', nameEn: 'Sunglasses (UV400)', category: 'toiletries', qty: '1副', qtyEn: '1 pair', isPacked: false, note: '', noteEn: '', climate: 'hot' },
+                    { id: 'to_h4', name: '蘆薈曬後修護啫喱', nameEn: 'Aloe Vera After-Sun Gel', category: 'toiletries', qty: '1支', qtyEn: '1 bottle', isPacked: false, note: '舒緩曬傷肌膚', noteEn: 'Soothes sunburns', climate: 'hot' }
+                ],
+                cold: [
+                    { id: 'cl_c1', name: '保暖內衣 / Heattech 內飾', nameEn: 'Thermal Underwear / Heattech', category: 'clothes', qty: `${Math.min(days, 5)}件`, qtyEn: `${Math.min(days, 5)} pcs`, isPacked: false, note: '貼身保暖打底', noteEn: 'Base layer for warmth', climate: 'cold' },
+                    { id: 'cl_c2', name: '防風厚羽絨 / 大衣外套', nameEn: 'Heavy Down Jacket / Coat', category: 'clothes', qty: '1-2件', qtyEn: '1-2 pcs', isPacked: false, note: '外層防風禦寒', noteEn: 'Outer windproof layer', climate: 'cold' },
+                    { id: 'cl_c3', name: '針織衫 / 毛衣 / 衛衣', nameEn: 'Sweaters / Hoodies', category: 'clothes', qty: `${pantsQty + 1}件`, qtyEn: `${pantsQty + 1} pcs`, isPacked: false, note: '洋蔥式穿搭中層', noteEn: 'Middle layer', climate: 'cold' },
+                    { id: 'cl_c4', name: '保暖長褲 / 厚牛仔褲', nameEn: 'Thermal Pants / Jeans', category: 'clothes', qty: `${pantsQty}條`, qtyEn: `${pantsQty} pcs`, isPacked: false, note: '', noteEn: '', climate: 'cold' },
+                    { id: 'cl_c5', name: '保暖襪 / 厚長襪', nameEn: 'Thick Thermal Socks', category: 'clothes', qty: `${socksQty}對`, qtyEn: `${socksQty} pairs`, isPacked: false, note: '保持雙腳溫暖', noteEn: 'Keep feet warm', climate: 'cold' },
+                    { id: 'cl_c6', name: '保暖頸巾 / 手套 / 毛帽', nameEn: 'Scarf, Gloves & Beanie', category: 'clothes', qty: '1-2套', qtyEn: '1-2 sets', isPacked: false, note: '頭部與手部禦寒', noteEn: 'Head & hand protection', climate: 'cold' },
+                    { id: 'cl_c7', name: '舒適雪靴 / 防滑行山鞋', nameEn: 'Snow Boots / Hiking Shoes', category: 'clothes', qty: '1雙', qtyEn: '1 pair', isPacked: false, note: '防滑防水底', noteEn: 'Non-slip & waterproof', climate: 'cold' },
+                    { id: 'to_c1', name: '高保濕面霜 & 護膚乳液', nameEn: 'Hydrating Face Cream & Lotion', category: 'toiletries', qty: '1套', qtyEn: '1 set', isPacked: false, note: '預防乾燥天氣爆拆', noteEn: 'Prevents dry skin', climate: 'cold' },
+                    { id: 'to_c2', name: '潤唇膏 (Lip Balm)', nameEn: 'Lip Balm', category: 'toiletries', qty: '1-2支', qtyEn: '1-2 pcs', isPacked: false, note: '隨身滋潤雙唇', noteEn: 'Moisturize lips', climate: 'cold' },
+                    { id: 'to_c3', name: '暖貼 / 暖寶寶 (Hand Warmers)', nameEn: 'Hand Warmers / Heat Packs', category: 'toiletries', qty: `${days * 2}包`, qtyEn: `${days * 2} packs`, isPacked: false, note: '放口袋或貼身上保暖', noteEn: 'Pocket or body warmers', climate: 'cold' }
+                ],
+                mild: [
+                    { id: 'cl_m1', name: '長袖 T-shirt / 襯衫', nameEn: 'Long-sleeve Shirts / Blouses', category: 'clothes', qty: `${tShirtQty - 1}件`, qtyEn: `${tShirtQty - 1} pcs`, isPacked: false, note: '適中溫度網絡穿搭', noteEn: 'Comfortable layer', climate: 'mild' },
+                    { id: 'cl_m2', name: '短袖 T-shirt (備用打底)', nameEn: 'Short-sleeve T-shirts', category: 'clothes', qty: '2-3件', qtyEn: '2-3 pcs', isPacked: false, note: '', noteEn: '', climate: 'mild' },
+                    { id: 'cl_m3', name: '便攜針織外套 / 風衣', nameEn: 'Light Cardigan / Jacket', category: 'clothes', qty: '2件', qtyEn: '2 pcs', isPacked: false, note: '早晚溫差大時穿著', noteEn: 'For cool mornings/nights', climate: 'mild' },
+                    { id: 'cl_m4', name: '舒適長褲 / 牛仔褲', nameEn: 'Casual Trousers / Jeans', category: 'clothes', qty: `${pantsQty}條`, qtyEn: `${pantsQty} pcs`, isPacked: false, note: '', noteEn: '', climate: 'mild' },
+                    { id: 'cl_m5', name: '內衣褲 & 吸汗襪', nameEn: 'Underwear & Sweat-wicking Socks', category: 'clothes', qty: `${socksQty}套`, qtyEn: `${socksQty} sets`, isPacked: false, note: '', noteEn: '', climate: 'mild' }
+                ]
+            };
+
+            let combined = [];
+            if (preset === 'all') {
+                combined = [...coreItems, ...seasonalItems.hot, ...seasonalItems.cold, ...seasonalItems.mild];
+            } else {
+                combined = [...coreItems, ...(seasonalItems[preset] || [])];
+            }
+
+            return combined.filter(i => !disabledItemIds.has(i.id));
+        }
+
+        function formatQtyBadge(qtyStr) {
+            if (!qtyStr) return '';
+            const match = qtyStr.match(/^([\d\-]+(?:\.\d+)?)\s*(.*)$/);
+            if (match) {
+                const num = match[1];
+                const unit = match[2];
+                return `
+                    <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl shadow-2xs inline-flex items-baseline shrink-0">
+                        <span class="text-sm md:text-base font-black text-indigo-600 tracking-tight leading-none">${num}</span>
+                        ${unit ? `<span class="text-[10px] md:text-[11px] font-bold text-slate-500 ml-0.5">${unit}</span>` : ''}
+                    </span>
+                `;
+            }
+            return `<span class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-2xs shrink-0">${qtyStr}</span>`;
+        }
+
+        function renderApp() {
+            const container = document.getElementById('packingListsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let packedCount = 0;
+            let totalCount = items.length;
+
+            items.forEach(item => { if (item.isPacked) packedCount++; });
+
+            const percent = totalCount > 0 ? Math.round((packedCount / totalCount) * 100) : 0;
+            document.getElementById('progressPercent').innerText = `${percent}%`;
+            document.getElementById('progressCount').innerText = `${packedCount} / ${totalCount} ${I18N[currentLang].packedSuffix}`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+
+            if (percent === 100 && totalCount > 0 && !confettiFired) {
+                confettiFired = true;
+                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+                showToast(I18N[currentLang].celebration);
+            }
+
+            const counts = { all: totalCount };
+            Object.keys(CATEGORIES).forEach(c => counts[c] = 0);
+            items.forEach(item => { if (counts[item.category] !== undefined) counts[item.category]++; });
+
+            document.getElementById('count-all').innerText = `(${counts.all})`;
+
+            const visibleCategories = currentFilter === 'all' ? Object.keys(CATEGORIES) : [currentFilter];
+
+            visibleCategories.forEach(catKey => {
+                const catDef = CATEGORIES[catKey];
+                const catItems = items.filter(i => i.category === catKey);
+
+                if (currentFilter !== 'all' || catItems.length > 0) {
+                    const categoryCard = document.createElement('div');
+                    categoryCard.className = 'bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 space-y-3';
+
+                    const catTitle = currentLang === 'zh' ? catDef.title : catDef.titleEn;
+
+                    let itemsHtml = '';
+                    if (catItems.length === 0) {
+                        itemsHtml = `<div class="text-slate-400 text-xs py-3 text-center italic">${I18N[currentLang].emptyCat}</div>`;
+                    } else {
+                        itemsHtml = catItems.map(item => {
+                            const name = currentLang === 'zh' ? item.name : (item.nameEn || item.name);
+                            const qty = currentLang === 'zh' ? item.qty : (item.qtyEn || item.qty);
+                            const note = currentLang === 'zh' ? item.note : (item.noteEn || item.note);
+                            const formattedBadge = formatQtyBadge(qty);
+
+                            return `
+                                <div class="flex items-center justify-between p-3 rounded-2xl transition border ${item.isPacked ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50 border-slate-100 hover:border-slate-200'}">
+                                    <label class="flex items-center space-x-3 cursor-pointer flex-1 min-w-0 mr-2">
+                                        <input type="checkbox" onchange="toggleItemPacked('${item.id}')" ${item.isPacked ? 'checked' : ''} class="checkbox-anim w-5 h-5 rounded-lg text-indigo-600 focus:ring-indigo-500 border-slate-300">
+                                        <div class="truncate">
+                                            <span class="text-sm font-semibold ${item.isPacked ? 'line-through text-slate-400' : 'text-slate-800'}">${name}</span>
+                                            ${note ? `<span class="text-[11px] text-slate-400 block truncate">${note}</span>` : ''}
+                                        </div>
+                                    </label>
+                                    <div class="flex items-center space-x-2 flex-shrink-0">
+                                        ${formattedBadge}
+                                        <button onclick="deleteItem('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1.5 text-xs transition rounded-lg hover:bg-rose-50" title="刪除此項目 / Delete Item">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+
+                    categoryCard.innerHTML = `
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                            <h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid ${catDef.icon} text-indigo-500"></i>
+                                ${catTitle}
+                            </h3>
+                            <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg">${catItems.filter(i=>i.isPacked).length} / ${catItems.length}</span>
+                        </div>
+                        <div class="space-y-2">
+                            ${itemsHtml}
+                        </div>
+                    `;
+                    container.appendChild(categoryCard);
+                }
+            });
+        }
+
+        function deleteItem(id) {
+            if (!id.startsWith('custom_')) {
+                disabledItemIds.add(id);
+                saveDisabledIds();
+            }
+            items = items.filter(i => i.id !== id);
+            saveItemsToStorage();
+            renderApp();
+            showToast(I18N[currentLang].itemDeletedToast);
+        }
+
+        function deleteCustomItem(id) {
+            deleteItem(id);
+        }
+
+        function toggleManageDefaultsModal(show) {
+            const modal = document.getElementById('manageDefaultsModal');
+            if (show) {
+                renderDefaultItemsListModal();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderDefaultItemsListModal() {
+            const container = document.getElementById('defaultItemsListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const tempDisabled = new Set(disabledItemIds);
+            disabledItemIds.clear();
+            const allMasterItems = buildFullItemList('all', 7);
+            disabledItemIds = tempDisabled;
+
+            Object.keys(CATEGORIES).forEach(catKey => {
+                const catDef = CATEGORIES[catKey];
+                const catMasterItems = allMasterItems.filter(i => i.category === catKey);
+
+                if (catMasterItems.length > 0) {
+                    const catTitle = currentLang === 'zh' ? catDef.title : catDef.titleEn;
+                    const catBox = document.createElement('div');
+                    catBox.className = 'bg-slate-50 rounded-2xl p-3 border border-slate-200/70 space-y-2';
+
+                    let itemsChecklistHtml = catMasterItems.map(item => {
+                        const isEnabled = !disabledItemIds.has(item.id);
+                        const name = currentLang === 'zh' ? item.name : (item.nameEn || item.name);
+                        return `
+                            <label class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-100 hover:border-indigo-200 cursor-pointer text-xs">
+                                <span class="font-semibold text-slate-700">${name}</span>
+                                <input type="checkbox" onchange="toggleDefaultItemEnabled('${item.id}', this.checked)" ${isEnabled ? 'checked' : ''} class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                            </label>
+                        `;
+                    }).join('');
+
+                    catBox.innerHTML = `
+                        <div class="text-xs font-extrabold text-slate-700 flex items-center gap-1.5 pb-1 border-b border-slate-200/60">
+                            <i class="fa-solid ${catDef.icon} text-indigo-500"></i> ${catTitle}
+                        </div>
+                        <div class="grid grid-cols-1 gap-1.5">
+                            ${itemsChecklistHtml}
+                        </div>
+                    `;
+                    container.appendChild(catBox);
+                }
+            });
+        }
+
+        function toggleDefaultItemEnabled(id, enabled) {
+            if (enabled) {
+                disabledItemIds.delete(id);
+            } else {
+                disabledItemIds.add(id);
+            }
+            saveDisabledIds();
+            const currentPacked = {};
+            items.forEach(i => { currentPacked[i.id] = i.isPacked; });
+            
+            const customItems = items.filter(i => i.id.startsWith('custom_'));
+            const newPresetItems = buildFullItemList(currentClimatePreset, tripDays);
+            newPresetItems.forEach(i => {
+                if (currentPacked[i.id] !== undefined) i.isPacked = currentPacked[i.id];
+            });
+            items = [...newPresetItems, ...customItems];
+            saveItemsToStorage();
+            renderApp();
+        }
+
+        function restoreFactoryDefaults() {
+            disabledItemIds.clear();
+            saveDisabledIds();
+            items = buildFullItemList(currentClimatePreset, tripDays);
+            saveItemsToStorage();
+            renderApp();
+            renderDefaultItemsListModal();
+            showToast(I18N[currentLang].restoredFactoryToast);
+        }
+
+        function saveCurrentListAsDefaults() {
+            const currentItemIds = new Set(items.map(i => i.id));
+            const masterItems = buildFullItemList('all', 7);
+            
+            masterItems.forEach(m => {
+                if (!currentItemIds.has(m.id)) {
+                    disabledItemIds.add(m.id);
+                }
+            });
+            saveDisabledIds();
+            showToast(I18N[currentLang].savedDefaultToast);
+        }
+
+        function executeReset() {
+            items = buildFullItemList(currentClimatePreset, tripDays);
+            confettiFired = false;
+            saveItemsToStorage();
+            renderApp();
+            toggleResetModal(false);
+            showToast(currentLang === 'zh' ? "清單已重置為預設狀態" : "List reset to defaults");
+        }
+
+        function renderWeatherPrompt() {
+            const resultBox = document.getElementById('weatherResultCard');
+            if (!resultBox) return;
+            const promptText = currentLang === 'zh' 
+                ? '請於上方輸入城市名稱或點選熱門城市，以獲取當地實時天氣預報與建議。'
+                : 'Please enter a city name above or select a popular city to get local weather forecast & packing advice.';
+            resultBox.innerHTML = `
+                <div class="text-center py-6 text-slate-300 space-y-2">
+                    <i class="fa-solid fa-cloud-sun text-3xl text-sky-400 block mb-1"></i>
+                    <p class="text-xs font-medium">${promptText}</p>
+                </div>
+            `;
+        }
+
+        function updateLanguageUI() {
+            const langBtn = document.getElementById('langToggleBtn');
+            if (langBtn) langBtn.innerHTML = `<i class="fa-solid fa-language"></i> ${currentLang === 'zh' ? 'EN' : '中文'}`;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (I18N[currentLang] && I18N[currentLang][key]) {
+                    el.innerText = I18N[currentLang][key];
+                }
+            });
+
+            const weatherInput = document.getElementById('weatherCityInput');
+            if (weatherInput) weatherInput.placeholder = I18N[currentLang].searchPlaceholder;
+            
+            const nameInput = document.getElementById('newItemName');
+            if (nameInput) nameInput.placeholder = I18N[currentLang].itemPlaceholderName;
+
+            const qtyInput = document.getElementById('newItemQty');
+            if (qtyInput) qtyInput.placeholder = I18N[currentLang].itemPlaceholderQty;
+            
+            updateHeaderTitle();
+        }
+
+        function updateHeaderTitle() {
+            const t = I18N[currentLang];
+            const headerTitle = document.getElementById('appHeaderTitle');
+            if (headerTitle) headerTitle.innerText = `${t.appTitlePrefix}${tripDays}${t.appTitleSuffix}`;
+        }
+
+        function updateDurationUI() {
+            const dayUnit = currentLang === 'zh' ? '日' : ' Days';
+            [3, 5, 7, 10, 14].forEach(d => {
+                const btn = document.getElementById(`day-btn-${d}`);
+                if (btn) {
+                    btn.innerHTML = `<span class="text-base md:text-lg font-black tracking-tight">${d}</span><span class="text-[10px] md:text-[11px] font-semibold opacity-85 ml-0.5">${dayUnit}</span>`;
+                    btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                }
+            });
+
+            const activeBtn = document.getElementById(`day-btn-${tripDays}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                activeBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+            }
+
+            const customDaysText = document.getElementById('customDaysText');
+            if (customDaysText) {
+                customDaysText.innerHTML = `
+                    <span class="text-lg md:text-xl font-black text-indigo-700 leading-none">${tripDays}</span>
+                    <span class="text-[10px] md:text-[11px] font-bold text-indigo-600 ml-0.5">${dayUnit}</span>
+                `;
+            }
+            updateHeaderTitle();
+        }
+
+        function triggerCitySearch() {
+            const input = document.getElementById('weatherCityInput').value.trim();
+            if (input) searchCityWeather(input);
+        }
+
+        function quickSelectCity(cityKey) {
+            const preset = CITY_PRESETS[cityKey];
+            if (preset) {
+                const searchName = currentLang === 'zh' ? preset.zh : preset.en;
+                document.getElementById('weatherCityInput').value = searchName;
+                fetchWeatherByCoords(preset.lat, preset.lon, searchName);
+            }
+        }
+
+        function searchCityWeather(cityName) {
+            const resultBox = document.getElementById('weatherResultCard');
+            if (!resultBox) return;
+            const loadingText = currentLang === 'zh' 
+                ? `搜尋 ${cityName} 天氣數據中...` 
+                : `Searching weather data for ${cityName}...`;
+            const notFoundText = currentLang === 'zh'
+                ? `<i class="fa-solid fa-triangle-exclamation mr-1"></i> 未能找到該城市，請重試。`
+                : `<i class="fa-solid fa-triangle-exclamation mr-1"></i> City not found. Please try again.`;
+            const errText = currentLang === 'zh'
+                ? `<i class="fa-solid fa-circle-exclamation mr-1"></i> 天氣網絡連線失敗。`
+                : `<i class="fa-solid fa-circle-exclamation mr-1"></i> Weather network connection error.`;
+
+            resultBox.innerHTML = `
+                <div class="text-center py-4 text-slate-300">
+                    <i class="fa-solid fa-spinner fa-spin text-xl mb-2 block text-sky-400"></i>
+                    <span>${loadingText}</span>
+                </div>`;
+
+            fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0) {
+                        const loc = data.results[0];
+                        fetchWeatherByCoords(loc.latitude, loc.longitude, loc.name);
+                    } else {
+                        resultBox.innerHTML = `<div class="text-amber-300 text-center py-2">${notFoundText}</div>`;
+                    }
+                })
+                .catch(() => {
+                    resultBox.innerHTML = `<div class="text-rose-300 text-center py-2">${errText}</div>`;
+                });
+        }
+
+        function fetchWeatherByCoords(lat, lon, cityName) {
+            lastCitySearched = cityName;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&past_days=7&forecast_days=16&timezone=auto`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    currentWeatherData = data;
+                    currentWeatherStartIndex = 7;
+                    
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString(currentLang === 'zh' ? 'zh-HK' : 'en-US', { month: 'numeric', day: 'numeric' });
+                    const timeStr = now.toLocaleTimeString(currentLang === 'zh' ? 'zh-HK' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+                    weatherFetchTime = `${dateStr} ${timeStr}`;
+
+                    renderWeatherCards(cityName);
+                })
+                .catch(() => {
+                    const failMsg = currentLang === 'zh' ? '無法讀取預報資料' : 'Failed to load forecast data';
+                    const resultBox = document.getElementById('weatherResultCard');
+                    if (resultBox) resultBox.innerHTML = `<div class="text-rose-300 text-center py-2">${failMsg}</div>`;
+                });
+        }
+
+        function navigateWeather(step) {
+            if (!currentWeatherData || !currentWeatherData.daily) return;
+            const total = currentWeatherData.daily.time.length;
+            let newIndex = currentWeatherStartIndex + step;
+            if (newIndex < 0) newIndex = 0;
+            if (newIndex + 7 > total) newIndex = total - 7;
+            currentWeatherStartIndex = newIndex;
+            renderWeatherCards(lastCitySearched);
+        }
+
+        function getWeatherIcon(code) {
+            if (code === 0) return 'fa-sun text-amber-400';
+            if (code >= 1 && code <= 3) return 'fa-cloud-sun text-amber-300';
+            if (code === 45 || code === 48) return 'fa-smog text-slate-300';
+            if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'fa-cloud-showers-heavy text-sky-400';
+            if (code >= 71 && code <= 77) return 'fa-snowflake text-sky-200';
+            if (code >= 85 && code <= 86) return 'fa-snowflake text-slate-200';
+            if (code >= 95 && code <= 99) return 'fa-cloud-bolt text-amber-400';
+            return 'fa-cloud text-slate-300';
+        }
+
+        function renderWeatherCards(cityName) {
+            const resultBox = document.getElementById('weatherResultCard');
+            if (!resultBox || !currentWeatherData || !currentWeatherData.daily) return;
+
+            const daily = currentWeatherData.daily;
+            const total = daily.time.length;
+            const startIndex = currentWeatherStartIndex;
+            const endIndex = Math.min(startIndex + 7, total);
+
+            const days = daily.time.slice(startIndex, endIndex);
+            const maxTemps = daily.temperature_2m_max.slice(startIndex, endIndex);
+            const minTemps = daily.temperature_2m_min.slice(startIndex, endIndex);
+            const rainProbs = daily.precipitation_probability_max.slice(startIndex, endIndex);
+            const codes = daily.weathercode.slice(startIndex, endIndex);
+
+            let avgMax = maxTemps.reduce((a,b)=>a+b, 0) / maxTemps.length;
+            let maxRain = Math.max(...rainProbs);
+
+            let recommendedPreset = 'mild';
+            if (avgMax > 26) recommendedPreset = 'hot';
+            else if (avgMax < 15) recommendedPreset = 'cold';
+
+            let umbrellaAdvise = maxRain > 30 ? I18N[currentLang].umbrellaNeed : I18N[currentLang].umbrellaNotNeed;
+            let jacketAdvise = avgMax < 22 ? I18N[currentLang].jacketNeed : I18N[currentLang].jacketNotNeed;
+
+            const weekDaysZh = ['日', '一', '二', '三', '四', '五', '六'];
+            const weekDaysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+            let dayCardsHtml = days.map((dateStr, idx) => {
+                const dateObj = new Date(dateStr);
+                const m = dateObj.getMonth() + 1;
+                const d = dateObj.getDate();
+                const dayOfWeek = currentLang === 'zh' ? weekDaysZh[dateObj.getDay()] : weekDaysEn[dateObj.getDay()];
+                const formattedDate = currentLang === 'zh' ? `${m}月${d}日 (${dayOfWeek})` : `${m}/${d} (${dayOfWeek})`;
+
+                const maxT = Math.round(maxTemps[idx]);
+                const minT = Math.round(minTemps[idx]);
+                const rainP = rainProbs[idx];
+                const code = codes[idx];
+
+                const icon = getWeatherIcon(code);
+
+                return `
+                    <div class="bg-white/10 p-2.5 rounded-xl text-center border border-white/10 space-y-1">
+                        <div class="text-[10px] text-slate-300 font-medium">${formattedDate}</div>
+                        <div class="text-base py-0.5"><i class="fa-solid ${icon}"></i></div>
+                        <div class="font-bold text-white text-xs">${minT}° - ${maxT}°C</div>
+                        <div class="text-[10px] text-sky-300"><i class="fa-solid fa-umbrella mr-0.5"></i>${rainP}%</div>
+                    </div>
+                `;
+            }).join('');
+
+            const avgHighLabel = currentLang === 'zh' ? `平均高溫 ~${Math.round(avgMax)}°C` : `Avg High ~${Math.round(avgMax)}°C`;
+            const fetchedTimeLabel = currentLang === 'zh' ? `資料獲取時間：${weatherFetchTime}` : `Data fetched at: ${weatherFetchTime}`;
+
+            const canGoBack = startIndex > 0;
+            const canGoForward = startIndex + 7 < total;
+
+            const dateRangeLabel = `${days[0]} ~ ${days[days.length - 1]}`;
+
+            resultBox.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-white/10 pb-2">
+                    <div>
+                        <span class="font-extrabold text-sm text-sky-300"><i class="fa-solid fa-location-dot mr-1"></i>${cityName}</span>
+                        <span class="text-slate-300 text-xs ml-2">${avgHighLabel}</span>
+                        <span class="text-slate-400 text-[11px] ml-2 hidden md:inline">(${dateRangeLabel})</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-[11px] text-slate-300 bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">
+                            <i class="fa-solid fa-clock text-amber-300 mr-1"></i>${fetchedTimeLabel}
+                        </span>
+                        <button onclick="switchClimatePreset('${recommendedPreset}')" class="px-2.5 py-1 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-lg font-bold text-xs shadow transition">
+                            ${I18N[currentLang].applyPreset} (${recommendedPreset.toUpperCase()})
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 my-1">
+                    <button onclick="navigateWeather(-7)" ${!canGoBack ? 'disabled' : ''} class="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-25 disabled:cursor-not-allowed text-white transition flex-shrink-0 border border-white/10" title="較早日期 / Earlier">
+                        <i class="fa-solid fa-chevron-left text-xs sm:text-sm"></i>
+                    </button>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 flex-1">
+                        ${dayCardsHtml}
+                    </div>
+
+                    <button onclick="navigateWeather(7)" ${!canGoForward ? 'disabled' : ''} class="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-25 disabled:cursor-not-allowed text-white transition flex-shrink-0 border border-white/10" title="較後日期 / Later">
+                        <i class="fa-solid fa-chevron-right text-xs sm:text-sm"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-3 text-[11px] text-slate-200 pt-1">
+                    <span class="bg-white/10 px-2 py-1 rounded-md"><i class="fa-solid fa-umbrella text-sky-400 mr-1"></i>${umbrellaAdvise}</span>
+                    <span class="bg-white/10 px-2 py-1 rounded-md"><i class="fa-solid fa-vest text-amber-300 mr-1"></i>${jacketAdvise}</span>
+                </div>
+            `;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            localStorage.setItem('packing_list_lang', currentLang);
+            updateLanguageUI();
+            updateDurationUI();
+            renderApp();
+            if (currentWeatherData) {
+                renderWeatherCards(lastCitySearched);
+            } else {
+                renderWeatherPrompt();
+            }
+        }
+
+        function changeTripDays(d) {
+            tripDays = Math.max(1, Math.min(30, d));
+            localStorage.setItem('packing_trip_days', tripDays);
+            items = buildFullItemList(currentClimatePreset, tripDays);
+            confettiFired = false;
+            saveItemsToStorage();
+            updateDurationUI();
+            renderApp();
+        }
+
+        function adjustDays(delta) {
+            changeTripDays(tripDays + delta);
+        }
+
+        function switchClimatePreset(preset) {
+            currentClimatePreset = preset;
+            ['all', 'hot', 'cold', 'mild'].forEach(p => {
+                const btn = document.getElementById(`preset-${p}`);
+                if (btn) {
+                    btn.classList.remove('bg-sky-500', 'text-white', 'border-sky-500');
+                    btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                }
+            });
+            const activeBtn = document.getElementById(`preset-${preset}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                activeBtn.classList.add('bg-sky-500', 'text-white', 'border-sky-500');
+            }
+            
+            const customItems = items.filter(i => i.id.startsWith('custom_'));
+            const newPresetItems = buildFullItemList(preset, tripDays);
+            
+            const packedMap = {};
+            items.forEach(i => { packedMap[i.id] = i.isPacked; });
+            
+            newPresetItems.forEach(i => {
+                if (packedMap[i.id] !== undefined) {
+                    i.isPacked = packedMap[i.id];
+                }
+            });
+            
+            items = [...newPresetItems, ...customItems];
+            saveItemsToStorage();
+            renderApp();
+            showToast(currentLang === 'zh' ? `已切換至 ${preset.toUpperCase()} 模式` : `Switched to ${preset.toUpperCase()} preset`);
+        }
+
+        function setCategoryFilter(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('bg-indigo-600', 'text-white');
+                tab.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+            });
+            const activeTab = document.getElementById(`tab-${cat}`);
+            if (activeTab) {
+                activeTab.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+                activeTab.classList.add('bg-indigo-600', 'text-white');
+            }
+            renderApp();
+        }
+
+        function toggleItemPacked(id) {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item.isPacked = !item.isPacked;
+                saveItemsToStorage();
+                renderApp();
+            }
+        }
+
+        function toggleAddItemModal(show) {
+            const modal = document.getElementById('addItemModal');
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        function handleAddNewItem(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newItemName');
+            const catSelect = document.getElementById('newItemCategory');
+            const qtyInput = document.getElementById('newItemQty');
+
+            const name = nameInput ? nameInput.value.trim() : '';
+            const category = catSelect ? catSelect.value : 'misc';
+            const qty = qtyInput ? qtyInput.value.trim() : '';
+
+            if (!name) return;
+
+            const newItem = {
+                id: 'custom_' + Date.now(),
+                name: name,
+                nameEn: name,
+                category: category,
+                qty: qty || '1件',
+                qtyEn: qty || '1 pc',
+                isPacked: false,
+                note: I18N[currentLang].customNote,
+                noteEn: I18N[currentLang].customNote,
+                climate: 'all'
+            };
+
+            items.push(newItem);
+            saveItemsToStorage();
+            renderApp();
+            toggleAddItemModal(false);
+            const form = document.getElementById('addItemForm');
+            if (form) form.reset();
+            showToast(currentLang === 'zh' ? '已新增自訂項目' : 'Added custom item');
+        }
+
+        function toggleResetModal(show) {
+            const modal = document.getElementById('resetModal');
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        function exportPackingList() {
+            let text = `✈️ ${I18N[currentLang].appTitlePrefix}${tripDays}${I18N[currentLang].appTitleSuffix}\n\n`;
+            Object.keys(CATEGORIES).forEach(catKey => {
+                const catItems = items.filter(i => i.category === catKey);
+                if (catItems.length > 0) {
+                    text += `[${currentLang === 'zh' ? CATEGORIES[catKey].title : CATEGORIES[catKey].titleEn}]\n`;
+                    catItems.forEach(i => {
+                        const status = i.isPacked ? '[✓]' : '[ ]';
+                        const name = currentLang === 'zh' ? i.name : (i.nameEn || i.name);
+                        const qty = currentLang === 'zh' ? i.qty : (i.qtyEn || i.qty);
+                        text += `${status} ${name} ${qty ? `(${qty})` : ''}\n`;
+                    });
+                    text += '\n';
+                }
+            });
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast(I18N[currentLang].listCopied);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+            if (toastText) toastText.innerText = msg;
+            if (toast) {
+                toast.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'pointer-events-none');
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
