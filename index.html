@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全天候 7 日旅遊 · 互動執行李清單</title>
+    <!-- Airplane Favicon / Browser Tab Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -521,6 +524,9 @@
             const savedDays = localStorage.getItem('packing_trip_days');
             if (savedDays) tripDays = parseInt(savedDays) || 7;
 
+            const savedPreset = localStorage.getItem('packing_climate_preset');
+            if (savedPreset) currentClimatePreset = savedPreset;
+
             const savedDisabled = localStorage.getItem('packing_disabled_ids');
             if (savedDisabled) {
                 try {
@@ -533,8 +539,29 @@
             loadItemsFromStorage();
             updateLanguageUI();
             updateDurationUI();
+            updatePresetUI();
+            
+            // Restore last searched weather data if available
+            const savedCity = localStorage.getItem('packing_last_city');
+            const savedWeatherData = localStorage.getItem('packing_weather_data');
+            const savedWeatherTime = localStorage.getItem('packing_weather_time');
+            
+            if (savedCity && savedWeatherData && savedWeatherTime) {
+                try {
+                    lastCitySearched = savedCity;
+                    currentWeatherData = JSON.parse(savedWeatherData);
+                    weatherFetchTime = savedWeatherTime;
+                    const weatherInput = document.getElementById('weatherCityInput');
+                    if (weatherInput) weatherInput.value = savedCity;
+                    renderWeatherCards(savedCity);
+                } catch(e) {
+                    renderWeatherPrompt();
+                }
+            } else {
+                renderWeatherPrompt();
+            }
+
             renderApp();
-            renderWeatherPrompt();
         };
 
         function saveDisabledIds() {
@@ -992,6 +1019,11 @@
                     const timeStr = now.toLocaleTimeString(currentLang === 'zh' ? 'zh-HK' : 'en-US', { hour: '2-digit', minute: '2-digit' });
                     weatherFetchTime = `${dateStr} ${timeStr}`;
 
+                    // Persist weather search state
+                    localStorage.setItem('packing_last_city', cityName);
+                    localStorage.setItem('packing_weather_data', JSON.stringify(data));
+                    localStorage.setItem('packing_weather_time', weatherFetchTime);
+
                     renderWeatherCards(cityName);
                 })
                 .catch(() => {
@@ -1149,18 +1181,8 @@
 
         function switchClimatePreset(preset) {
             currentClimatePreset = preset;
-            ['all', 'hot', 'cold', 'mild'].forEach(p => {
-                const btn = document.getElementById(`preset-${p}`);
-                if (btn) {
-                    btn.classList.remove('bg-sky-500', 'text-white', 'border-sky-500');
-                    btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
-                }
-            });
-            const activeBtn = document.getElementById(`preset-${preset}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
-                activeBtn.classList.add('bg-sky-500', 'text-white', 'border-sky-500');
-            }
+            localStorage.setItem('packing_climate_preset', preset);
+            updatePresetUI();
             
             const customItems = items.filter(i => i.id.startsWith('custom_'));
             const newPresetItems = buildFullItemList(preset, tripDays);
@@ -1180,26 +1202,18 @@
             showToast(currentLang === 'zh' ? `已切換至 ${preset.toUpperCase()} 模式` : `Switched to ${preset.toUpperCase()} preset`);
         }
 
-        function setCategoryFilter(cat) {
-            currentFilter = cat;
-            document.querySelectorAll('.category-tab').forEach(tab => {
-                tab.classList.remove('bg-indigo-600', 'text-white');
-                tab.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        function updatePresetUI() {
+            ['all', 'hot', 'cold', 'mild'].forEach(p => {
+                const btn = document.getElementById(`preset-${p}`);
+                if (btn) {
+                    btn.classList.remove('bg-sky-500', 'text-white', 'border-sky-500');
+                    btn.classList.add('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                }
             });
-            const activeTab = document.getElementById(`tab-${cat}`);
-            if (activeTab) {
-                activeTab.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
-                activeTab.classList.add('bg-indigo-600', 'text-white');
-            }
-            renderApp();
-        }
-
-        function toggleItemPacked(id) {
-            const item = items.find(i => i.id === id);
-            if (item) {
-                item.isPacked = !item.isPacked;
-                saveItemsToStorage();
-                renderApp();
+            const activeBtn = document.getElementById(`preset-${currentClimatePreset}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'border-slate-200');
+                activeBtn.classList.add('bg-sky-500', 'text-white', 'border-sky-500');
             }
         }
 
