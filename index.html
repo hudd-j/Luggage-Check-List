@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>執行李清單 | Luggage Check List</title>
     <!-- Airplane Favicon / Browser Tab Icon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E✈️%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E✈️%3C/text%3E%3C/svg%3E">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,7 +54,7 @@
                     ✈️
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-black tracking-wide" id="appHeaderTitle">執行李清單 (7日行程)</h1>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wide" id="appHeaderTitle">執行李清單</h1>
                     <p class="text-sky-100 text-xs mt-0.5" id="appHeaderSub">專為 Switch 玩家、充電器材、手信 & 四季不同氣候設計</p>
                 </div>
             </div>
@@ -131,7 +132,7 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
                 <div>
                     <h2 class="text-lg font-bold flex items-center gap-2 text-sky-300" id="weatherTitle">
-                        <i class="fa-solid fa-cloud-sun-rain"></i> 目的地 7 日天氣預測
+                        <i class="fa-solid fa-cloud-sun-rain"></i> 目的地天氣預測
                     </h2>
                     <p class="text-slate-400 text-xs mt-1" id="weatherSub">搜尋你將會造訪嘅城市，即時調配裝備與季節配備</p>
                 </div>
@@ -141,6 +142,7 @@
                     <div class="relative flex-1 md:w-64">
                         <i class="fa-solid fa-location-dot absolute left-3.5 top-3 text-slate-400 text-sm"></i>
                         <input type="text" id="cityInput" placeholder="輸入城市 (例如：東京, 曼谷)" 
+                               onkeydown="if(event.key==='Enter') searchCityWeather()"
                                class="w-full bg-slate-800/80 border border-slate-700/80 text-white placeholder-slate-400 text-sm rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
                     </div>
                     <button onclick="searchCityWeather()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm px-4 py-2 rounded-xl transition shadow-md flex items-center gap-1.5 shrink-0">
@@ -297,23 +299,28 @@
         </div>
     </div>
 
+    <!-- Custom Toast Message Container -->
+    <div id="toastMessage" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl z-50 hidden transform transition-all duration-300 flex items-center gap-2 border border-slate-700">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastText">訊息提示</span>
+    </div>
+
     <script>
         let currentLang = localStorage.getItem('packing_lang') || 'zh';
         let tripDays = parseInt(localStorage.getItem('packing_days')) || 7;
         let activeClimate = localStorage.getItem('packing_climate') || 'all';
         let activeCategory = 'all';
-        let weatherOffsetIndex = 0; // Pagination for extended weather days
+        let weatherOffsetIndex = 7; // Weather navigation index
 
-        // i18n Dictionary
+        // I18N Dictionary
         const I18N = {
             zh: {
-                appTitlePrefix: "執行李清單 (",
-                appTitleSuffix: "日行程)",
+                appTitle: "執行李清單",
                 appSubtitle: "專為 Switch 玩家、充電器材、手信 & 四季不同氣候設計",
                 durationTitle: "行程天數 (自動計算建議衣物與藥物數量)",
                 durationSub: "選擇或自訂天數，系統會自動按比例調整建議帶備之數量",
                 dayUnit: "日",
-                weatherTitle: "目的地 7 日天氣預測",
+                weatherTitle: "目的地天氣預測",
                 weatherSub: "搜尋你將會造訪嘅城市，即時調配裝備與季節配備",
                 cityPlaceholder: "輸入城市 (例如：東京, 曼谷)",
                 searchBtn: "搜尋",
@@ -346,23 +353,21 @@
                 sourceAttribution: "資料來源: Open-Meteo 全球氣象數據",
                 cats: {
                     all: "全部物品",
-                    gaming: "🎮 Switch 遊戲配備",
-                    chargers: "⚡ 充電器 & 火牛",
-                    clothes: "👕 衣物服飾",
-                    toiletries: "🧴 洗漱護膚",
-                    pharmacy: "💊 隨身藥物",
+                    clothes: "👕 衣物",
+                    tech: "⚡ 電子配件",
+                    personal_care: "🧴 個人護理",
+                    pharmacy: "💊 藥品",
                     documents: "📄 證件財物",
-                    misc: "🎒 雜項 & 手信"
+                    misc: "🎒 其他"
                 }
             },
             en: {
-                appTitlePrefix: "Luggage Check List (",
-                appTitleSuffix: "-Day Trip)",
-                appSubtitle: "Tailored for Switch Gamers, Chargers, Gifts & All 4 Seasons",
+                appTitle: "Luggage Check List",
+                appSubtitle: "Tailored for Switch Gamers, Chargers, Gifts & All Seasons",
                 durationTitle: "Trip Duration (Auto-scales clothes & meds quantities)",
                 durationSub: "Select or customize days to scale recommended quantities automatically",
                 dayUnit: "Days",
-                weatherTitle: "7-Day Destination Weather Forecast",
+                weatherTitle: "Destination Weather Forecast",
                 weatherSub: "Search your destination to dynamically check packing gear",
                 cityPlaceholder: "Enter city (e.g., Tokyo, Bangkok)",
                 searchBtn: "Search",
@@ -395,18 +400,16 @@
                 sourceAttribution: "Source: Open-Meteo Weather API",
                 cats: {
                     all: "All Items",
-                    gaming: "🎮 Nintendo Switch",
-                    chargers: "⚡ Chargers & Adapters",
-                    clothes: "👕 Clothes & Wear",
-                    toiletries: "🧴 Toiletries",
+                    clothes: "👕 Clothes",
+                    tech: "⚡ Tech Accessories",
+                    personal_care: "🧴 Personal Care",
                     pharmacy: "💊 Medicines",
-                    documents: "📄 Travel Docs",
-                    misc: "🎒 Misc & Gifts"
+                    documents: "📄 Documents & Wallet",
+                    misc: "🎒 Misc"
                 }
             }
         };
 
-        // City Translation Dictionary for Search
         const CITY_MAP = {
             'Tokyo': { zh: '東京', en: 'Tokyo' },
             'Bangkok': { zh: '曼谷', en: 'Bangkok' },
@@ -422,52 +425,49 @@
         };
 
         const MASTER_ITEMS = [
-            // Switch Gaming
-            { id: 'sw_console', cat: 'gaming', nameZh: 'Nintendo Switch 主機 (配 Joy-Con)', nameEn: 'Nintendo Switch Console + Joy-Cons', qtyBase: '1', unitZh: '部', unitEn: 'pc', noteZh: '登機隨身帶，切勿託運', noteEn: 'Carry-on only, do not check in' },
-            { id: 'sw_case', cat: 'gaming', nameZh: 'Switch 防撞保護盒', nameEn: 'Switch Carrying Case', qtyBase: '1', unitZh: '個', unitEn: 'pc', noteZh: '放入主機與常用卡帶', noteEn: 'Protects console & game cards' },
-            { id: 'sw_cards', cat: 'gaming', nameZh: 'Switch 遊戲卡帶', nameEn: 'Switch Game Cards', qtyBase: '2-4', unitZh: '張', unitEn: 'pcs', noteZh: '瑪利歐派對、賽車多人必備', noteEn: 'Multiplayer games recommended' },
-            { id: 'sw_dock', cat: 'gaming', nameZh: 'Switch 便攜式 TV Dock / HDMI線', nameEn: 'Portable Switch TV Dock + HDMI', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '連駁酒店電視大螢幕打機', noteEn: 'To connect to hotel TV screen' },
-
-            // Chargers & Power
-            { id: 'ch_gan', cat: 'gaming', nameZh: 'GaN 多孔快充火牛 (65W/100W+)', nameEn: 'GaN Fast Charger (65W/100W+)', qtyBase: '1-2', unitZh: '個', unitEn: 'pcs', noteZh: '可同時充 Switch、Mac/Phone', noteEn: 'Charges Switch, Laptop & Phone' },
-            { id: 'ch_adapter', cat: 'chargers', nameZh: '萬能旅行轉接頭 (Universal Adaptor)', nameEn: 'Universal Travel Adapter', qtyBase: '1-2', unitZh: '個', unitEn: 'pcs', noteZh: '適用目的地插座規格', noteEn: 'Fits destination power outlets' },
-            { id: 'ch_bank', cat: 'chargers', nameZh: '大容量外置尿袋 (Power Bank)', nameEn: 'High-capacity Power Bank', qtyBase: '1', unitZh: '個', unitEn: 'pc', noteZh: '必須隨身登機 (低於 20000mAh)', noteEn: 'Must be in carry-on bag' },
-            { id: 'ch_cables', cat: 'chargers', nameZh: '充電線 (Type-C, Lightning, Watch)', nameEn: 'Charging Cables (Type-C, Lightning)', qtyBase: '3-4', unitZh: '條', unitEn: 'pcs', noteZh: '建議帶 1.5 米長線方便酒店床頭', noteEn: 'Longer cable for hotel bed' },
-            { id: 'ch_airpods', cat: 'chargers', nameZh: 'AirPods Max / 降噪耳機', nameEn: 'AirPods Max / ANC Headphones', qtyBase: '1', unitZh: '副', unitEn: 'pc', noteZh: '飛機降噪必備，連充電線', noteEn: 'Great for noise cancelling on flight' },
-
-            // Clothes (Base)
+            // 1. 衣物 Clothes
             { id: 'cl_tops', cat: 'clothes', nameZh: 'T-Shirt / 上衣', nameEn: 'T-Shirts / Tops', qtyScale: 'days_plus_1', unitZh: '件', unitEn: 'pcs', noteZh: '輕便透氣', noteEn: 'Light & breathable' },
             { id: 'cl_under', cat: 'clothes', nameZh: '內衣褲 & 襪子', nameEn: 'Underwear & Socks', qtyScale: 'days_plus_1', unitZh: '套', unitEn: 'sets', noteZh: '每日替換，建議多備一套', noteEn: 'Daily set + 1 spare' },
             { id: 'cl_bottoms', cat: 'clothes', nameZh: '短褲 / 長褲', nameEn: 'Pants / Shorts', qtyScale: 'days_half', unitZh: '條', unitEn: 'pcs', noteZh: '休閒百搭', noteEn: 'Casual & versatile' },
             { id: 'cl_sleep', cat: 'clothes', nameZh: '睡衣睡褲', nameEn: 'Sleepwear / Pajamas', qtyBase: '1-2', unitZh: '套', unitEn: 'sets', noteZh: '舒適為主', noteEn: 'Comfortable nightwear' },
-
-            // Seasonal Hot Clothes
+            { id: 'cl_shoes', cat: 'clothes', nameZh: '替換鞋款 / 拖鞋', nameEn: 'Extra Shoes / Slippers', qtyBase: '1', unitZh: '雙', unitEn: 'pair', noteZh: '方便行街或酒店穿著', noteEn: 'Comfortable walking shoes' },
             { id: 'cl_swim', cat: 'clothes', climate: 'hot', nameZh: '泳衣 / 泳褲 / 防曬衣', nameEn: 'Swimwear / Swim Trunks', qtyBase: '1-2', unitZh: '套', unitEn: 'sets', noteZh: '陽光海灘 / 酒店泳池', noteEn: 'For beach or hotel pool' },
-            { id: 'cl_sunhat', cat: 'misc', climate: 'hot', nameZh: '遮陽帽 & 太陽眼鏡', nameEn: 'Sun Hat & Sunglasses', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '防紫外線', noteEn: 'UV Protection' },
-
-            // Seasonal Cold Clothes
             { id: 'cl_down', cat: 'clothes', climate: 'cold', nameZh: '防風保暖羽絨 / 大衣', nameEn: 'Down Jacket / Heavy Coat', qtyBase: '1', unitZh: '件', unitEn: 'pc', noteZh: '外層防風禦寒', noteEn: 'Outer layer windproof warmth' },
             { id: 'cl_heattech', cat: 'clothes', climate: 'cold', nameZh: '保暖內衣 (Heattech)', nameEn: 'Thermal Underwear', qtyScale: 'days', unitZh: '件', unitEn: 'pcs', noteZh: '貼身保暖', noteEn: 'Base layer for winter' },
             { id: 'cl_scarf', cat: 'clothes', climate: 'cold', nameZh: '圍巾 / 手套 / 暖貼', nameEn: 'Scarf, Gloves & Heat Packs', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '雪地戶外必備', noteEn: 'Outdoor cold weather essential' },
 
-            // Toiletries
-            { id: 'to_sunscreen', cat: 'toiletries', nameZh: '防曬乳液 (SPF50+)', nameEn: 'Sunscreen (SPF50+)', qtyBase: '1', unitZh: '支', unitEn: 'pc', noteZh: '戶外活動定時補塗', noteEn: 'Essential for outdoor protection' },
-            { id: 'to_skin', cat: 'toiletries', nameZh: '旅行保濕護膚套裝', nameEn: 'Skincare Travel Kit', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '卸妝、洗面、爽膚水', noteEn: 'Cleanser & moisturizer' },
-            { id: 'to_teeth', cat: 'toiletries', nameZh: '牙膏牙刷套裝', nameEn: 'Toothbrush & Toothpaste', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '部份環保酒店不主動提供', noteEn: 'Eco hotels may not provide' },
+            // 2. 電子配件 Tech Accessories
+            { id: 'sw_console', cat: 'tech', nameZh: 'Nintendo Switch 主機 (配 Joy-Con)', nameEn: 'Nintendo Switch Console + Joy-Cons', qtyBase: '1', unitZh: '部', unitEn: 'pc', noteZh: '登機隨身帶，切勿託運', noteEn: 'Carry-on only, do not check in' },
+            { id: 'sw_case', cat: 'tech', nameZh: 'Switch 防撞保護盒 & 卡帶', nameEn: 'Switch Carrying Case & Games', qtyBase: '1', unitZh: '個', unitEn: 'pc', noteZh: '放入主機與常用遊戲卡帶', noteEn: 'Protects console & game cards' },
+            { id: 'sw_dock', cat: 'tech', nameZh: 'Switch 便攜式 TV Dock / HDMI線', nameEn: 'Portable Switch TV Dock + HDMI', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '連駁酒店電視大螢幕打機', noteEn: 'To connect to hotel TV screen' },
+            { id: 'ch_gan', cat: 'tech', nameZh: 'GaN 多孔快充火牛 (65W/100W+)', nameEn: 'GaN Fast Charger (65W/100W+)', qtyBase: '1-2', unitZh: '個', unitEn: 'pcs', noteZh: '可同時充 Switch、Mac/Phone', noteEn: 'Charges Switch, Laptop & Phone' },
+            { id: 'ch_adapter', cat: 'tech', nameZh: '萬能旅行轉接頭 (Universal Adaptor)', nameEn: 'Universal Travel Adapter', qtyBase: '1-2', unitZh: '個', unitEn: 'pcs', noteZh: '適用目的地插座規格', noteEn: 'Fits destination power outlets' },
+            { id: 'ch_bank', cat: 'tech', nameZh: '大容量外置尿袋 (Power Bank)', nameEn: 'High-capacity Power Bank', qtyBase: '1', unitZh: '個', unitEn: 'pc', noteZh: '必須隨身登機 (低於 20000mAh)', noteEn: 'Must be in carry-on bag' },
+            { id: 'ch_cables', cat: 'tech', nameZh: '充電線 (Type-C, Lightning, Watch)', nameEn: 'Charging Cables (Type-C, Lightning)', qtyBase: '3-4', unitZh: '條', unitEn: 'pcs', noteZh: '建議帶 1.5 米長線方便酒店床頭', noteEn: 'Longer cable for hotel bed' },
+            { id: 'ch_airpods', cat: 'tech', nameZh: 'AirPods Max / 降噪耳機', nameEn: 'AirPods Max / ANC Headphones', qtyBase: '1', unitZh: '副', unitEn: 'pc', noteZh: '飛機降噪必備，連充電線', noteEn: 'Great for noise cancelling on flight' },
 
-            // Pharmacy
+            // 3. 個人護理 Personal Care
+            { id: 'to_skin', cat: 'personal_care', nameZh: '旅行保濕護膚套裝', nameEn: 'Skincare Travel Kit', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '卸妝、洗面、爽膚水', noteEn: 'Cleanser & moisturizer' },
+            { id: 'to_sunscreen', cat: 'personal_care', nameZh: '防曬乳液 (SPF50+)', nameEn: 'Sunscreen (SPF50+)', qtyBase: '1', unitZh: '支', unitEn: 'pc', noteZh: '戶外活動定時補塗', noteEn: 'Essential for outdoor protection' },
+            { id: 'to_teeth', cat: 'personal_care', nameZh: '牙膏牙刷套裝', nameEn: 'Toothbrush & Toothpaste', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '部份環保酒店不主動提供', noteEn: 'Eco hotels may not provide' },
+            { id: 'to_contacts', cat: 'personal_care', nameZh: '隱形眼鏡 & 隱形眼鏡水', nameEn: 'Contact Lenses & Solution', qtyBase: '1', unitZh: '盒', unitEn: 'set', noteZh: '建議備用多一對日拋', noteEn: 'Include spare daily lenses' },
+            { id: 'to_hair', cat: 'personal_care', nameZh: '髮泥 / 定型噴霧 / 梳', nameEn: 'Hair Clay / Styling Spray / Comb', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '個人造型必備', noteEn: 'Personal hair styling' },
+
+            // 4. 藥品 Pharmacy
             { id: 'ph_meds', cat: 'pharmacy', nameZh: '常備個人藥物 (感冒/止痛/腸胃)', nameEn: 'Personal Medicines (Cold/Pain)', qtyScale: 'days_meds', unitZh: '包', unitEn: 'packs', noteZh: '水土不服 / 備用', noteEn: 'Emergency stomach/cold remedies' },
             { id: 'ph_bandaid', cat: 'pharmacy', nameZh: '膠布 & 止痕膏', nameEn: 'Bandaids & Anti-itch Ointment', qtyBase: '1', unitZh: '盒', unitEn: 'box', noteZh: '蚊蟲叮咬或小刮傷', noteEn: 'For scratches or insect bites' },
 
-            // Documents
+            // 5. 證件財物 Documents & Wallet
             { id: 'doc_passport', cat: 'documents', nameZh: '護照 (有效期6個月以上)', nameEn: 'Passport (Valid >6 months)', qtyBase: '1', unitZh: '本', unitEn: 'pc', noteZh: '核對有效日期', noteEn: 'Check expiry date' },
+            { id: 'doc_visa', cat: 'documents', nameZh: '通行證 / 簽證 (如需)', nameEn: 'Entry Permit / Visa (if needed)', qtyBase: '1', unitZh: '份', unitEn: 'set', noteZh: '確認目的地入境要求', noteEn: 'Check destination requirements' },
             { id: 'doc_id', cat: 'documents', nameZh: '香港身份證 / 駕駛執照', nameEn: 'HKID / Driver License', qtyBase: '1', unitZh: '張', unitEn: 'pc', noteZh: '隨身攜帶', noteEn: 'Personal Identification' },
             { id: 'doc_card', cat: 'documents', nameZh: '外幣現金 & 海外信用卡', nameEn: 'Foreign Currency & Credit Cards', qtyBase: '1', unitZh: '包', unitEn: 'set', noteZh: '開通海外簽帳 / 提款', noteEn: 'Enable overseas withdrawal' },
 
-            // Misc & Gifts
+            // 6. 其他 Misc
             { id: 'mi_gifts', cat: 'misc', nameZh: '攞俾朋友嘅手信 / 禮物', nameEn: 'Gifts & Souvenirs for Friends', qtyBase: '1-3', unitZh: '份', unitEn: 'pcs', noteZh: '準備送給當地朋友', noteEn: 'Presents for local friends' },
             { id: 'mi_umbrella', cat: 'misc', nameZh: '晴雨兩用輕便摺傘', nameEn: 'Compact Umbrella', qtyBase: '1', unitZh: '把', unitEn: 'pc', noteZh: '遮陽防突發陣雨', noteEn: 'Sun and sudden rain protection' },
-            { id: 'mi_bag', cat: 'misc', nameZh: '便攜摺叠污衣袋', nameEn: 'Foldable Laundry Bag', qtyBase: '1-2', unitZh: '個', unitEn: 'pcs', noteZh: '分開乾淨衣物與污衣', noteEn: 'Separate dirty clothes' }
+            { id: 'mi_bag', cat: 'misc', nameZh: '便攜摺叠污衣袋', nameEn: 'Foldable Laundry Bag', qtyBase: '1-2', unitZh: '個', unitEn: 'pcs', noteZh: '分開乾淨衣物與污衣', noteEn: 'Separate dirty clothes' },
+            { id: 'cl_sunhat', cat: 'misc', climate: 'hot', nameZh: '遮陽帽 & 太陽眼鏡', nameEn: 'Sun Hat & Sunglasses', qtyBase: '1', unitZh: '套', unitEn: 'set', noteZh: '防紫外線', noteEn: 'UV Protection' }
         ];
 
         let packedState = JSON.parse(localStorage.getItem('packing_checked') || '{}');
@@ -489,16 +489,25 @@
                 return { num: `${qty}`, unit: currentLang === 'zh' ? (item.unitZh || '條') : (item.unitEn || 'pcs') };
             }
             if (item.qtyScale === 'days_meds') {
-                return { num: `${tripDays}`, unit: currentLang === 'zh' ? (item.unitZh || '日份') : (item.unitEn || 'days') };
+                return { num: `${tripDays}`, unit: currentLang === 'zh' ? (item.unitZh || '包') : (item.unitEn || 'packs') };
             }
             return { num: item.qtyBase || '1', unit: currentLang === 'zh' ? (item.unitZh || '') : (item.unitEn || '') };
+        }
+
+        function getActiveItems() {
+            let active = MASTER_ITEMS.filter(item => {
+                if (deletedItemIds.includes(item.id)) return false;
+                if (userDefaultPresets && !userDefaultPresets.includes(item.id)) return false;
+                if (item.climate && activeClimate !== 'all' && item.climate !== activeClimate) return false;
+                return true;
+            });
+            return active.concat(customItems);
         }
 
         function toggleLanguage() {
             currentLang = currentLang === 'zh' ? 'en' : 'zh';
             localStorage.setItem('packing_lang', currentLang);
             
-            // Sync City search input if it matches quick cities
             const cityInput = document.getElementById('cityInput');
             if (cityInput && cityInput.value.trim()) {
                 const val = cityInput.value.trim();
@@ -516,7 +525,7 @@
 
         function updateStaticText() {
             const lang = I18N[currentLang];
-            document.getElementById('appHeaderTitle').textContent = `${lang.appTitlePrefix}${tripDays}${lang.appTitleSuffix}`;
+            document.getElementById('appHeaderTitle').textContent = lang.appTitle;
             document.getElementById('appHeaderSub').textContent = lang.appSubtitle;
             document.getElementById('durationTitle').innerHTML = `<i class="fa-solid fa-calendar-days text-sky-600"></i> ${lang.durationTitle}`;
             document.getElementById('durationSub').textContent = lang.durationSub;
@@ -560,197 +569,38 @@
             document.getElementById('confirmResetBtnText').textContent = lang.confirmResetBtn;
         }
 
-        function getActiveItems() {
-            let baseList = userDefaultPresets || MASTER_ITEMS.map(i => i.id);
-            
-            let list = MASTER_ITEMS.filter(i => {
-                if (deletedItemIds.includes(i.id)) return false;
-                if (!baseList.includes(i.id)) return false;
-                if (i.climate && activeClimate !== 'all' && i.climate !== activeClimate) return false;
-                return true;
-            });
-
-            // Append custom items
-            customItems.forEach(c => {
-                if (!deletedItemIds.includes(c.id)) {
-                    list.push(c);
-                }
-            });
-
-            return list;
-        }
-
-        function renderCategoryTabs() {
-            const container = document.getElementById('categoryTabs');
-            const lang = I18N[currentLang];
-            const cats = lang.cats;
-
-            container.innerHTML = Object.keys(cats).map(catKey => {
-                const isActive = activeCategory === catKey;
-                const activeClass = isActive ? 'bg-sky-600 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200';
-                return `<button onclick="setCategoryFilter('${catKey}')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 ${activeClass}">
-                    ${cats[catKey]}
-                </button>`;
-            }).join('');
-
-            // Also update select option in custom item form
-            const select = document.getElementById('newItemCategory');
-            select.innerHTML = Object.keys(cats).filter(k => k !== 'all').map(k => {
-                return `<option value="${k}">${cats[k]}</option>`;
-            }).join('');
-        }
-
-        function renderPackingList() {
-            const container = document.getElementById('packingListContainer');
-            const items = getActiveItems();
-            const lang = I18N[currentLang];
-
-            // Group by category
-            const grouped = {};
-            items.forEach(item => {
-                if (activeCategory !== 'all' && item.cat !== activeCategory) return;
-                if (!grouped[item.cat]) grouped[item.cat] = [];
-                grouped[item.cat].push(item);
-            });
-
-            if (Object.keys(grouped).length === 0) {
-                container.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-slate-400 text-xs border border-slate-200">
-                    <i class="fa-solid fa-box-open text-3xl mb-2 block text-slate-300"></i>
-                    ${currentLang === 'zh' ? '此分類下暫無物品' : 'No items in this category'}
-                </div>`;
-                updateProgressBar(0, 0);
-                return;
-            }
-
-            let totalCount = items.length;
-            let packedCount = items.filter(i => packedState[i.id]).length;
-            updateProgressBar(packedCount, totalCount);
-
-            container.innerHTML = Object.keys(grouped).map(catKey => {
-                const catTitle = lang.cats[catKey] || catKey;
-                const catItems = grouped[catKey];
-
-                const itemsHtml = catItems.map(item => {
-                    const isChecked = !!packedState[item.id];
-                    const name = currentLang === 'zh' ? (item.nameZh || item.nameEn) : (item.nameEn || item.nameZh);
-                    const note = currentLang === 'zh' ? (item.noteZh || item.noteEn) : (item.noteEn || item.noteZh);
-                    const qtyInfo = getItemQuantityStr(item);
-
-                    return `<div class="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200/90 hover:border-sky-300 transition shadow-2xs group">
-                        <label class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3">
-                            <input type="checkbox" onchange="toggleItemPacked('${item.id}')" ${isChecked ? 'checked' : ''} class="hidden custom-checkbox">
-                            <div class="w-5 h-5 rounded-md border-2 border-slate-300 flex items-center justify-center transition shrink-0">
-                                <i class="fa-solid fa-check text-white text-xs hidden"></i>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <span class="text-sm font-medium ${isChecked ? 'line-through text-slate-400' : 'text-slate-800'} block truncate">
-                                    ${name}
-                                </span>
-                                ${note ? `<span class="text-[11px] text-slate-400 block truncate mt-0.5">${note}</span>` : ''}
-                            </div>
-                        </label>
-
-                        <div class="flex items-center gap-3 shrink-0">
-                            <span class="inline-flex items-baseline gap-0.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80">
-                                <span class="text-sm font-extrabold text-sky-700">${qtyInfo.num}</span>
-                                <span class="text-[10px] font-medium text-slate-500">${qtyInfo.unit}</span>
-                            </span>
-                            <button onclick="deleteItem('${item.id}')" title="Delete item" class="text-slate-300 hover:text-rose-500 p-1.5 transition">
-                                <i class="fa-solid fa-trash-can text-xs"></i>
-                            </button>
-                        </div>
-                    </div>`;
-                }).join('');
-
-                return `<div class="space-y-2">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">${catTitle}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                        ${itemsHtml}
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function updateProgressBar(packed, total) {
-            const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
-            const progressBar = document.getElementById('progressBar');
-            const percentText = document.getElementById('packingProgressPercent');
-
-            if (progressBar) progressBar.style.width = `${percent}%`;
-            if (percentText) {
-                const unitText = currentLang === 'zh' ? '已執好' : 'packed';
-                percentText.textContent = `${percent}% (${packed} / ${total} ${unitText})`;
-            }
-
-            if (percent === 100 && total > 0) {
-                triggerConfetti();
-            }
-        }
-
-        function triggerConfetti() {
-            if (window.confetti) {
-                confetti({
-                    particleCount: 80,
-                    spread: 70,
-                    origin: { y: 0.6 }
-                });
-            }
-        }
-
-        function toggleItemPacked(id) {
-            packedState[id] = !packedState[id];
-            localStorage.setItem('packing_checked', JSON.stringify(packedState));
-            renderPackingList();
-        }
-
-        function deleteItem(id) {
-            if (!deletedItemIds.includes(id)) {
-                deletedItemIds.push(id);
-                localStorage.setItem('packing_deleted_ids', JSON.stringify(deletedItemIds));
-            }
-            renderPackingList();
-        }
-
-        function setCategoryFilter(cat) {
-            activeCategory = cat;
-            renderCategoryTabs();
-            renderPackingList();
-        }
-
         function changeTripDays(days) {
-            tripDays = Math.max(1, Math.min(30, days));
+            tripDays = parseInt(days) || 7;
             localStorage.setItem('packing_days', tripDays);
             
-            // Highlight active preset button
             [3, 5, 7, 10, 14].forEach(d => {
                 const btn = document.getElementById(`btnDays${d}`);
                 if (btn) {
                     if (d === tripDays) {
-                        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-sky-600 text-white shadow-xs";
-                        btn.querySelector('span:nth-child(2)').className = "text-[10px] opacity-90 font-normal duration-unit";
+                        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-sky-600 text-white shadow-sm";
                     } else {
                         btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:bg-white";
-                        btn.querySelector('span:nth-child(2)').className = "text-[10px] text-slate-500 font-normal duration-unit";
                     }
                 }
             });
 
-            updateStaticText();
+            document.getElementById('currentTripDaysNum').textContent = tripDays;
             renderPackingList();
         }
 
         function adjustDays(delta) {
-            changeTripDays(tripDays + delta);
+            let next = Math.max(1, Math.min(30, tripDays + delta));
+            changeTripDays(next);
         }
 
         function switchClimatePreset(preset) {
             activeClimate = preset;
-            localStorage.setItem('packing_climate', activeClimate);
+            localStorage.setItem('packing_climate', preset);
 
             ['all', 'hot', 'cold', 'mild'].forEach(p => {
                 const btn = document.getElementById(`preset${p.charAt(0).toUpperCase() + p.slice(1)}`);
                 if (btn) {
-                    if (p === activeClimate) {
+                    if (p === preset) {
                         btn.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-sky-600 text-white shadow-xs";
                     } else {
                         btn.className = "px-3 py-1.5 rounded-lg font-semibold transition text-slate-600 hover:bg-white";
@@ -759,6 +609,337 @@
             });
 
             renderPackingList();
+        }
+
+        function getWeatherIcon(code) {
+            if (code === 0) return 'fa-sun text-amber-400';
+            if (code <= 3) return 'fa-cloud-sun text-amber-300';
+            if (code <= 48) return 'fa-smog text-slate-300';
+            if (code <= 67) return 'fa-cloud-rain text-blue-400';
+            if (code <= 77 || (code >= 85 && code <= 86)) return 'fa-snowflake text-sky-200';
+            if (code <= 82) return 'fa-cloud-showers-heavy text-blue-400';
+            if (code >= 95) return 'fa-cloud-bolt text-yellow-400';
+            return 'fa-cloud text-slate-400';
+        }
+
+        async function quickSelectCity(cityKey) {
+            const cityName = CITY_MAP[cityKey] ? CITY_MAP[cityKey][currentLang] : cityKey;
+            document.getElementById('cityInput').value = cityName;
+            await fetchCityWeather(cityKey);
+        }
+
+        async function searchCityWeather() {
+            const inputVal = document.getElementById('cityInput').value.trim();
+            if (!inputVal) return;
+            await fetchCityWeather(inputVal);
+        }
+
+        async function fetchCityWeather(query) {
+            const container = document.getElementById('weatherDisplayContainer');
+            container.innerHTML = `
+                <div class="bg-slate-800/40 rounded-xl p-8 text-center border border-slate-700/50">
+                    <i class="fa-solid fa-spinner fa-spin text-3xl text-sky-400 mb-2"></i>
+                    <p class="text-slate-300 text-xs font-medium">正在取得 ${query} 最新氣象資料...</p>
+                </div>
+            `;
+
+            try {
+                let lookupName = query;
+                if (CITY_MAP[query]) lookupName = CITY_MAP[query].en;
+
+                const geoRes = await fetch(`httpsgeocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(lookupName)}&count=5&language=en&format=json`.replace('httpsgeocoding', 'https://geocoding'));
+                const geoData = await geoRes.json();
+
+                if (!geoData.results || geoData.results.length === 0) {
+                    throw new Error('City not found');
+                }
+
+                const city = geoData.results[0];
+                const weatherRes = await fetch(`httpsapi.open-meteo.com/v1/forecast?latitude=${city.latitude}&longitude=${city.longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&past_days=7&forecast_days=16`.replace('httpsapi', 'https://api'));
+                const weatherData = await weatherRes.json();
+
+                const now = new Date();
+                const fetchedAt = `${now.getMonth()+1}/${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+                cachedWeather = {
+                    cityName: city.name,
+                    country: city.country || '',
+                    daily: weatherData.daily,
+                    fetchedAt: fetchedAt
+                };
+
+                localStorage.setItem('packing_cached_weather', JSON.stringify(cachedWeather));
+                renderWeatherDisplay(cachedWeather);
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="bg-rose-950/40 rounded-xl p-6 text-center border border-rose-800/50 text-rose-300 text-xs">
+                        <i class="fa-solid fa-circle-exclamation text-2xl mb-2 text-rose-400 block"></i>
+                        未能找到該城市嘅天氣資料，請嘗試輸入英文名稱 (例如: Tokyo, London)。
+                    </div>
+                `;
+            }
+        }
+
+        function shiftWeather(delta) {
+            weatherOffsetIndex = Math.max(0, Math.min(16, weatherOffsetIndex + delta));
+            if (cachedWeather) renderWeatherDisplay(cachedWeather);
+        }
+
+        function renderWeatherDisplay(data) {
+            const container = document.getElementById('weatherDisplayContainer');
+            const daily = data.daily;
+            const lang = I18N[currentLang];
+
+            const sliceStart = weatherOffsetIndex;
+            const sliceEnd = weatherOffsetIndex + 7;
+            const dates = daily.time.slice(sliceStart, sliceEnd);
+            const codes = daily.weathercode.slice(sliceStart, sliceEnd);
+            const maxTemps = daily.temperature_2m_max.slice(sliceStart, sliceEnd);
+            const minTemps = daily.temperature_2m_min.slice(sliceStart, sliceEnd);
+            const rainProbs = daily.precipitation_probability_max.slice(sliceStart, sliceEnd);
+
+            let cardsHtml = '';
+            let avgMax = 0;
+            let hasHighRain = false;
+
+            dates.forEach((dStr, idx) => {
+                const dateObj = new Date(dStr);
+                const dayName = dateObj.toLocaleDateString(currentLang === 'zh' ? 'zh-HK' : 'en-US', { weekday: 'short' });
+                const monthDay = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                
+                const maxT = Math.round(maxTemps[idx]);
+                const minT = Math.round(minTemps[idx]);
+                const rain = rainProbs[idx] || 0;
+                const iconClass = getWeatherIcon(codes[idx]);
+
+                avgMax += maxT;
+                if (rain > 40) hasHighRain = true;
+
+                cardsHtml += `
+                    <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700/80 text-center flex flex-col justify-between items-center hover:bg-slate-800 transition">
+                        <span class="text-[11px] font-semibold text-sky-300">${monthDay} (${dayName})</span>
+                        <div class="my-2 text-2xl">
+                            <i class="fa-solid ${iconClass}"></i>
+                        </div>
+                        <div class="text-xs font-bold text-white mb-1">
+                            ${maxT}° <span class="text-slate-400 font-normal text-[10px]">${minT}°</span>
+                        </div>
+                        <span class="text-[10px] ${rain > 30 ? 'text-sky-400 font-bold' : 'text-slate-400'} flex items-center gap-0.5">
+                            <i class="fa-solid fa-umbrella text-[9px]"></i> ${rain}%
+                        </span>
+                    </div>
+                `;
+            });
+
+            avgMax = Math.round(avgMax / dates.length);
+
+            let tipMsg = "";
+            if (avgMax >= 26) {
+                tipMsg = currentLang === 'zh' 
+                    ? `☀️ 當地平均約 ${avgMax}°C，氣候炎熱！已為你自動挑選涼爽衣物與防曬用品。` 
+                    : `☀️ Avg ${avgMax}°C, warm weather! Scaled light clothing & sunscreen for you.`;
+            } else if (avgMax <= 15) {
+                tipMsg = currentLang === 'zh' 
+                    ? `❄️ 當地平均約 ${avgMax}°C，氣候寒冷！建議切換「寒冷雪國」模式攜帶大衣保暖。` 
+                    : `❄️ Avg ${avgMax}°C, chilly forecast! Consider switching to Cold climate mode for heavy coats.`;
+            } else {
+                tipMsg = currentLang === 'zh' 
+                    ? `🍂 當地平均約 ${avgMax}°C，氣候宜人！建議帶備薄外套作早晚保暖。` 
+                    : `🍂 Avg ${avgMax}°C, mild climate! Bring light jackets for morning and evening breeze.`;
+            }
+
+            if (hasHighRain) {
+                tipMsg += currentLang === 'zh' ? " 🌧️ 預測有降雨機率，記得隨身帶備摺傘！" : " 🌧️ High chance of rain, pack a compact umbrella!";
+            }
+
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between text-xs text-slate-300">
+                        <span class="font-bold text-sky-300 flex items-center gap-1.5 text-sm">
+                            <i class="fa-solid fa-location-dot"></i> ${data.cityName} ${data.country}
+                        </span>
+                        <span class="text-[11px] text-slate-400">${lang.dataFetchedAt} ${data.fetchedAt}</span>
+                    </div>
+
+                    <div class="relative flex items-center gap-2">
+                        <button onclick="shiftWeather(-7)" ${weatherOffsetIndex <= 0 ? 'disabled class="opacity-30 cursor-not-allowed text-slate-400 p-1.5"' : 'class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-xl transition border border-slate-700 shrink-0"'}>
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 flex-1">
+                            ${cardsHtml}
+                        </div>
+                        <button onclick="shiftWeather(7)" ${weatherOffsetIndex >= 14 ? 'disabled class="opacity-30 cursor-not-allowed text-slate-400 p-1.5"' : 'class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-xl transition border border-slate-700 shrink-0"'}>
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="bg-sky-950/60 border border-sky-800/60 rounded-xl p-3 text-xs text-sky-200 flex items-center justify-between flex-wrap gap-2">
+                        <p class="flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb text-amber-300 text-base"></i>
+                            <span>${tipMsg}</span>
+                        </p>
+                        <span class="text-[10px] text-slate-400 italic">${lang.sourceAttribution}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCategoryTabs() {
+            const container = document.getElementById('categoryTabs');
+            const lang = I18N[currentLang];
+            const categories = ['all', 'clothes', 'tech', 'personal_care', 'pharmacy', 'documents', 'misc'];
+
+            let html = '';
+            categories.forEach(cat => {
+                const isActive = activeCategory === cat;
+                const label = lang.cats[cat] || cat;
+                html += `
+                    <button onclick="setCategoryFilter('${cat}')" 
+                        class="px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition ${
+                            isActive ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }">
+                        ${label}
+                    </button>
+                `;
+            });
+            container.innerHTML = html;
+
+            // Populate New Item Category Dropdown
+            const select = document.getElementById('newItemCategory');
+            select.innerHTML = '';
+            Object.keys(lang.cats).filter(c => c !== 'all').forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = lang.cats[c];
+                select.appendChild(opt);
+            });
+        }
+
+        function setCategoryFilter(cat) {
+            activeCategory = cat;
+            renderCategoryTabs();
+            renderPackingList();
+        }
+
+        function toggleItemPacked(itemId) {
+            packedState[itemId] = !packedState[itemId];
+            localStorage.setItem('packing_checked', JSON.stringify(packedState));
+            renderPackingList();
+
+            // Trigger Confetti when 100% complete
+            const activeItems = getActiveItems();
+            const checkedCount = activeItems.filter(i => packedState[i.id]).length;
+            if (activeItems.length > 0 && checkedCount === activeItems.length) {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        function deleteItem(itemId) {
+            // Check if custom item
+            const customIdx = customItems.findIndex(ci => ci.id === itemId);
+            if (customIdx > -1) {
+                customItems.splice(customIdx, 1);
+                localStorage.setItem('packing_custom_items', JSON.stringify(customItems));
+            } else {
+                if (!deletedItemIds.includes(itemId)) {
+                    deletedItemIds.push(itemId);
+                    localStorage.setItem('packing_deleted_ids', JSON.stringify(deletedItemIds));
+                }
+            }
+            renderPackingList();
+            showToast(currentLang === 'zh' ? '已刪除物品' : 'Item removed');
+        }
+
+        function renderPackingList() {
+            const container = document.getElementById('packingListContainer');
+            const lang = I18N[currentLang];
+            const activeItems = getActiveItems();
+
+            let itemsToDisplay = activeItems;
+            if (activeCategory !== 'all') {
+                itemsToDisplay = activeItems.filter(i => i.cat === activeCategory);
+            }
+
+            // Update Progress Bar
+            const totalCount = activeItems.length;
+            const checkedCount = activeItems.filter(i => packedState[i.id]).length;
+            const pct = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+
+            document.getElementById('packingProgressPercent').textContent = `${pct}% (${checkedCount} / ${totalCount} ${currentLang === 'zh' ? '已執好' : 'packed'})`;
+            document.getElementById('progressBar').style.width = `${pct}%`;
+
+            if (itemsToDisplay.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-8 text-center border border-slate-200">
+                        <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-2 block"></i>
+                        <p class="text-xs text-slate-500">${currentLang === 'zh' ? '此分類暫無物品，點擊下方表單新增品項！' : 'No items in this category. Add a custom item below!'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by category
+            const grouped = {};
+            itemsToDisplay.forEach(item => {
+                if (!grouped[item.cat]) grouped[item.cat] = [];
+                grouped[item.cat].push(item);
+            });
+
+            let html = '';
+            Object.keys(grouped).forEach(catKey => {
+                const catTitle = lang.cats[catKey] || catKey;
+                html += `
+                    <div class="bg-white rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/90 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                            ${catTitle}
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                `;
+
+                grouped[catKey].forEach(item => {
+                    const isChecked = !!packedState[item.id];
+                    const name = currentLang === 'zh' ? (item.nameZh || item.nameEn) : (item.nameEn || item.nameZh);
+                    const note = currentLang === 'zh' ? (item.noteZh || item.noteEn) : (item.noteEn || item.noteZh);
+                    const qtyInfo = getItemQuantityStr(item);
+
+                    html += `
+                        <div class="flex items-center justify-between p-3 rounded-xl border ${
+                            isChecked ? 'bg-sky-50/50 border-sky-200/60' : 'bg-slate-50/60 border-slate-200/80 hover:bg-slate-100/60'
+                        } transition group">
+                            <label class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-2">
+                                <div class="relative shrink-0">
+                                    <input type="checkbox" onchange="toggleItemPacked('${item.id}')" ${isChecked ? 'checked' : ''} class="sr-only custom-checkbox">
+                                    <div class="w-5 h-5 rounded-lg border-2 border-slate-300 flex items-center justify-center transition bg-white">
+                                        <i class="fa-solid fa-check text-white text-[10px] hidden"></i>
+                                    </div>
+                                </div>
+                                <div class="truncate">
+                                    <div class="text-xs font-semibold ${isChecked ? 'line-through text-slate-400' : 'text-slate-800'} truncate">
+                                        ${name}
+                                    </div>
+                                    ${note ? `<div class="text-[10px] text-slate-400 truncate mt-0.5">${note}</div>` : ''}
+                                </div>
+                            </label>
+
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="bg-slate-200/70 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-medium">
+                                    <span class="text-sm font-extrabold text-sky-600">${qtyInfo.num}</span> <span class="text-[10px] text-slate-500">${qtyInfo.unit}</span>
+                                </span>
+                                <button onclick="deleteItem('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1.5 transition rounded-lg hover:bg-rose-50">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
         function addNewCustomItem() {
@@ -770,15 +951,15 @@
             if (!name) return;
 
             const newItem = {
-                id: 'cust_' + Date.now(),
+                id: 'custom_' + Date.now(),
                 cat: catSelect.value,
                 nameZh: name,
                 nameEn: name,
                 noteZh: noteInput.value.trim(),
                 noteEn: noteInput.value.trim(),
                 qtyBase: '1',
-                unitZh: '個',
-                unitEn: 'pc'
+                unitZh: '件',
+                unitEn: 'pcs'
             };
 
             customItems.push(newItem);
@@ -786,240 +967,31 @@
 
             nameInput.value = '';
             noteInput.value = '';
+
             renderPackingList();
+            showToast(currentLang === 'zh' ? '已成功加入自訂物品！' : 'Custom item added!');
         }
 
-        function quickSelectCity(cityKey) {
-            const cityInfo = CITY_MAP[cityKey];
-            if (cityInfo) {
-                document.getElementById('cityInput').value = cityInfo[currentLang];
-                searchCityWeather();
-            }
-        }
-
-        function getWeatherIcon(code) {
-            if (code === 0) return 'fa-sun text-amber-400'; // Clear
-            if (code >= 1 && code <= 3) return 'fa-cloud-sun text-amber-300'; // Partly cloudy
-            if (code === 45 || code === 48) return 'fa-smog text-slate-400'; // Fog
-            if (code >= 51 && code <= 67) return 'fa-cloud-rain text-sky-400'; // Drizzle / Light Rain
-            if (code >= 71 && code <= 77) return 'fa-snowflake text-indigo-300'; // Snow
-            if (code >= 80 && code <= 82) return 'fa-cloud-showers-heavy text-blue-400'; // Rain Showers
-            if (code >= 85 && code <= 86) return 'fa-snowflake text-blue-200'; // Snow Showers
-            if (code >= 95) return 'fa-cloud-bolt text-amber-500'; // Thunderstorm
-            return 'fa-cloud text-slate-300';
-        }
-
-        async function searchCityWeather() {
-            const cityInput = document.getElementById('cityInput');
-            const cityName = cityInput.value.trim();
-            if (!cityName) return;
-
-            const container = document.getElementById('weatherDisplayContainer');
-            const lang = I18N[currentLang];
-
-            container.innerHTML = `<div class="bg-slate-800/60 rounded-xl p-8 text-center border border-slate-700">
-                <i class="fa-solid fa-spinner fa-spin text-2xl text-sky-400 mb-2 block"></i>
-                <p class="text-slate-300 text-xs">${currentLang === 'zh' ? '正在獲取實時天氣數據...' : 'Fetching real-time weather data...'}</p>
-            </div>`;
-
-            try {
-                // 1. Map city name to English fallback query if applicable
-                let queryName = cityName;
-                for (let k in CITY_MAP) {
-                    if (CITY_MAP[k].zh === cityName || CITY_MAP[k].en.toLowerCase() === cityName.toLowerCase()) {
-                        queryName = CITY_MAP[k].en;
-                        break;
-                    }
-                }
-
-                // Query top 10 results to prioritize populated cities
-                let geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(queryName)}&count=10&language=${currentLang === 'zh' ? 'zh' : 'en'}`;
-                let geoRes = await fetch(geoUrl);
-                let geoData = await geoRes.json();
-
-                // Fallback attempt with raw cityName if queryName returned empty
-                if ((!geoData.results || geoData.results.length === 0) && queryName !== cityName) {
-                    geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=10&language=en`;
-                    geoRes = await fetch(geoUrl);
-                    geoData = await geoRes.json();
-                }
-
-                if (!geoData.results || geoData.results.length === 0) {
-                    container.innerHTML = `<div class="bg-slate-800/60 rounded-xl p-6 text-center border border-rose-900/50 text-rose-300 text-xs">
-                        <i class="fa-solid fa-circle-exclamation text-xl mb-1 block"></i>
-                        ${currentLang === 'zh' ? '找不到該城市，請嘗試輸入英文名稱 (例如：Tokyo, Osaka)。' : 'City not found. Please try entering the city in English (e.g., Tokyo, Osaka).'}
-                    </div>`;
-                    return;
-                }
-
-                // Sort by population descending so major cities take priority
-                geoData.results.sort((a, b) => (b.population || 0) - (a.population || 0));
-                const place = geoData.results[0];
-                const lat = place.latitude;
-                const lon = place.longitude;
-                const displayName = `${place.name}, ${place.country || ''}`;
-
-                // 2. Weather Forecast (past 7 days + 16 future days = 23 days)
-                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&past_days=7&forecast_days=16&timezone=auto`;
-                const weatherRes = await fetch(weatherUrl);
-                const weatherData = await weatherRes.json();
-
-                const fetchedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'numeric', day: 'numeric' });
-
-                cachedWeather = {
-                    cityName: displayName,
-                    fetchedAt: fetchedAt,
-                    daily: weatherData.daily
-                };
-
-                localStorage.setItem('packing_cached_weather', JSON.stringify(cachedWeather));
-                weatherOffsetIndex = 7; // Default to start at today (past_days=7)
-                renderWeatherDisplay(cachedWeather);
-
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = `<div class="bg-slate-800/60 rounded-xl p-6 text-center border border-rose-900/50 text-rose-300 text-xs">
-                    <i class="fa-solid fa-wifi text-xl mb-1 block"></i>
-                    ${currentLang === 'zh' ? '天氣連線失敗，請檢查網路。' : 'Failed to load weather data.'}
-                </div>`;
-            }
-        }
-
-        function navigateWeather(direction) {
-            if (!cachedWeather || !cachedWeather.daily) return;
-            const totalDays = cachedWeather.daily.time.length;
-            
-            if (direction === 'next' && weatherOffsetIndex + 7 < totalDays) {
-                weatherOffsetIndex += 7;
-            } else if (direction === 'prev' && weatherOffsetIndex - 7 >= 0) {
-                weatherOffsetIndex -= 7;
-            }
-            renderWeatherDisplay(cachedWeather);
-        }
-
-        function renderWeatherDisplay(data) {
-            const container = document.getElementById('weatherDisplayContainer');
-            if (!data || !data.daily) return;
-
-            const lang = I18N[currentLang];
-            const daily = data.daily;
-            const times = daily.time;
-            const maxTemps = daily.temperature_2m_max;
-            const minTemps = daily.temperature_2m_min;
-            const weatherCodes = daily.weathercode;
-            const rainProbs = daily.precipitation_probability_max;
-
-            const visibleTimes = times.slice(weatherOffsetIndex, weatherOffsetIndex + 7);
-            
-            // Average max temp for advisory
-            let tempSum = 0;
-            let rainMax = 0;
-            visibleTimes.forEach((_, idx) => {
-                const realIdx = weatherOffsetIndex + idx;
-                tempSum += maxTemps[realIdx];
-                if (rainProbs[realIdx] > rainMax) rainMax = rainProbs[realIdx];
-            });
-            const avgMax = Math.round(tempSum / visibleTimes.length);
-
-            // Auto recommendation text
-            let adviceZh = "";
-            let adviceEn = "";
-            if (avgMax >= 26) {
-                adviceZh = "☀️ 天氣偏熱！建議準備涼爽 T-Shirt、短褲、防曬乳及透氣服飾。";
-                adviceEn = "☀️ Hot weather expected! Bring light T-shirts, shorts & sunscreen.";
-            } else if (avgMax <= 15) {
-                adviceZh = "❄️ 天氣較冷！記得準備保暖大衣、Heattech 及保濕護膚品。";
-                adviceEn = "❄️ Cold weather expected! Bring heavy coat, thermals & moisturizer.";
-            } else {
-                adviceZh = "🍂 氣溫舒適涼爽！建議帶備薄外套與長褲，方便層次穿搭。";
-                adviceEn = "🍂 Mild weather expected! Light jacket and long pants recommended.";
-            }
-
-            if (rainMax >= 40) {
-                adviceZh += " 🌧️ 降雨機率高，務必攜帶摺傘或防水外套！";
-                adviceEn += " 🌧️ High chance of rain, pack an umbrella or waterproof jacket!";
-            }
-
-            // Cards HTML
-            const cardsHtml = visibleTimes.map((t, idx) => {
-                const realIdx = weatherOffsetIndex + idx;
-                const dateObj = new Date(t);
-                const dateStr = dateObj.toLocaleDateString(currentLang === 'zh' ? 'zh-HK' : 'en-US', { month: 'numeric', day: 'numeric', weekday: 'short' });
-                const maxT = Math.round(maxTemps[realIdx]);
-                const minT = Math.round(minTemps[realIdx]);
-                const iconClass = getWeatherIcon(weatherCodes[realIdx]);
-                const rain = rainProbs[realIdx] !== undefined ? rainProbs[realIdx] : 0;
-
-                return `<div class="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3 text-center flex flex-col justify-between hover:border-sky-500/50 transition">
-                    <div>
-                        <span class="text-[11px] text-slate-400 font-medium block truncate">${dateStr}</span>
-                        <div class="my-2.5 text-2xl">
-                            <i class="fa-solid ${iconClass}"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="text-sm font-bold text-white">${maxT}° <span class="text-xs text-slate-400 font-normal">/ ${minT}°</span></div>
-                        ${rain > 20 ? `<div class="text-[10px] text-sky-400 mt-1"><i class="fa-solid fa-umbrella text-[9px]"></i> ${rain}%</div>` : ''}
-                    </div>
-                </div>`;
-            }).join('');
-
-            const prevDisabled = weatherOffsetIndex <= 0;
-            const nextDisabled = weatherOffsetIndex + 7 >= times.length;
-
-            container.innerHTML = `<div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs border-b border-slate-800 pb-3">
-                    <div>
-                        <span class="font-bold text-sky-300 text-sm">${data.cityName}</span>
-                        <span class="text-slate-400 ml-2">${lang.dataFetchedAt} ${data.fetchedAt}</span>
-                    </div>
-                    <span class="text-[11px] text-slate-500">${lang.sourceAttribution}</span>
-                </div>
-
-                <div class="bg-sky-950/60 border border-sky-800/50 rounded-xl p-3 text-xs text-sky-200 flex items-center gap-2">
-                    <i class="fa-solid fa-lightbulb text-amber-400 text-sm shrink-0"></i>
-                    <span>${currentLang === 'zh' ? adviceZh : adviceEn}</span>
-                </div>
-
-                <!-- Weather Cards Grid with Arrow Navigation -->
-                <div class="relative flex items-center gap-2">
-                    <button onclick="navigateWeather('prev')" ${prevDisabled ? 'disabled' : ''} class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-30 disabled:pointer-events-none transition border border-slate-700 shrink-0">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 flex-1">
-                        ${cardsHtml}
-                    </div>
-
-                    <button onclick="navigateWeather('next')" ${nextDisabled ? 'disabled' : ''} class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-30 disabled:pointer-events-none transition border border-slate-700 shrink-0">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>`;
-        }
-
+        // Preset Modal Functions
         function openDefaultPresetModal() {
-            const modal = document.getElementById('presetModal');
-            const listContainer = document.getElementById('presetModalList');
-            const lang = I18N[currentLang];
+            const container = document.getElementById('presetModalList');
+            const activePresetIds = userDefaultPresets || MASTER_ITEMS.map(i => i.id);
 
-            let activePresets = userDefaultPresets || MASTER_ITEMS.map(i => i.id);
-
-            listContainer.innerHTML = MASTER_ITEMS.map(item => {
-                const isChecked = activePresets.includes(item.id);
+            let html = '<div class="space-y-2">';
+            MASTER_ITEMS.forEach(item => {
+                const isSelected = activePresetIds.includes(item.id);
                 const name = currentLang === 'zh' ? item.nameZh : item.nameEn;
-                const catTitle = lang.cats[item.cat] || item.cat;
+                html += `
+                    <label class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs cursor-pointer hover:bg-slate-100 transition">
+                        <span class="font-medium text-slate-700">${name}</span>
+                        <input type="checkbox" value="${item.id}" ${isSelected ? 'checked' : ''} class="preset-checkbox w-4 h-4 text-sky-600 rounded">
+                    </label>
+                `;
+            });
+            html += '</div>';
 
-                return `<label class="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
-                    <div class="flex items-center gap-2.5">
-                        <input type="checkbox" data-preset-id="${item.id}" ${isChecked ? 'checked' : ''} class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
-                        <span class="text-xs font-medium text-slate-800">${name}</span>
-                    </div>
-                    <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">${catTitle}</span>
-                </label>`;
-            }).join('');
-
-            modal.classList.remove('hidden');
+            container.innerHTML = html;
+            document.getElementById('presetModal').classList.remove('hidden');
         }
 
         function closeDefaultPresetModal() {
@@ -1027,32 +999,38 @@
         }
 
         function saveDefaultPresetModal() {
-            const checkboxes = document.querySelectorAll('#presetModalList input[data-preset-id]');
-            const newPresets = [];
+            const checkboxes = document.querySelectorAll('.preset-checkbox');
+            const selected = [];
             checkboxes.forEach(cb => {
-                if (cb.checked) newPresets.push(cb.getAttribute('data-preset-id'));
+                if (cb.checked) selected.push(cb.value);
             });
 
-            userDefaultPresets = newPresets;
+            userDefaultPresets = selected;
             localStorage.setItem('packing_user_presets', JSON.stringify(userDefaultPresets));
             closeDefaultPresetModal();
             renderPackingList();
+            showToast(currentLang === 'zh' ? '預設範本設定已更新！' : 'Preset settings updated!');
         }
 
         function restoreFactoryDefaults() {
             userDefaultPresets = null;
+            deletedItemIds = [];
             localStorage.removeItem('packing_user_presets');
-            openDefaultPresetModal();
+            localStorage.removeItem('packing_deleted_ids');
+            closeDefaultPresetModal();
+            renderPackingList();
+            showToast(currentLang === 'zh' ? '已還原至原廠預設！' : 'Restored to factory defaults!');
         }
 
         function saveCurrentListAsDefaultPreset() {
-            const activeItems = getActiveItems();
-            userDefaultPresets = activeItems.map(i => i.id);
+            const activeIds = getActiveItems().map(i => i.id);
+            userDefaultPresets = activeIds;
             localStorage.setItem('packing_user_presets', JSON.stringify(userDefaultPresets));
             closeDefaultPresetModal();
-            renderPackingList();
+            showToast(currentLang === 'zh' ? '已將目前清單儲存為預設範本！' : 'Saved current list as default preset!');
         }
 
+        // Reset Modal
         function confirmResetList() {
             document.getElementById('resetConfirmModal').classList.remove('hidden');
         }
@@ -1066,13 +1044,23 @@
             localStorage.removeItem('packing_checked');
             closeResetConfirmModal();
             renderPackingList();
+            showToast(currentLang === 'zh' ? '已重置行李清單！' : 'List reset to default state!');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastMessage');
+            document.getElementById('toastText').textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2500);
         }
 
         function exportPackingList() {
             const items = getActiveItems();
             const lang = I18N[currentLang];
             
-            let text = `✈️ ${currentLang === 'zh' ? '執行李清單' : 'Luggage Check List'} (${tripDays} ${lang.dayUnit})\n`;
+            let text = `✈️ ${lang.appTitle} (${tripDays} ${lang.dayUnit})\n`;
             text += `------------------------------\n`;
 
             const grouped = {};
@@ -1091,7 +1079,6 @@
                 });
             });
 
-            // Copy via execCommand for browser iframe safety
             const textarea = document.createElement('textarea');
             textarea.value = text;
             document.body.appendChild(textarea);
@@ -1099,11 +1086,13 @@
             document.execCommand('copy');
             document.body.removeChild(textarea);
 
-            alert(currentLang === 'zh' ? '已成功複製行李清單至剪貼簿！' : 'Packing list copied to clipboard!');
+            showToast(currentLang === 'zh' ? '已複製清單至剪貼簿！' : 'List copied to clipboard!');
         }
 
         function renderApp() {
             updateStaticText();
+            changeTripDays(tripDays);
+            switchClimatePreset(activeClimate);
             renderCategoryTabs();
             renderPackingList();
         }
